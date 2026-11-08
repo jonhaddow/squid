@@ -94,13 +94,11 @@ test('hard mode keeps going and speeds up every 10 friends', async ({ page }) =>
 	expect(now.speed).toBeGreaterThan(start.speed);
 });
 
-test('wave 5 ends with the kraken: the others swim off and it takes 3 spells', async ({ page }) => {
+test('wave 3 ends with the kraken: the others swim off and it takes 3 spells', async ({ page }) => {
 	await page.addInitScript(() =>
 		localStorage.setItem(
 			'squid-spells-v1',
-			JSON.stringify([
-				{ level: 5, learned: ['zigzag', 'square', 'circle', 'triangle', 'swirl', 'star'] }
-			])
+			JSON.stringify([{ level: 3, learned: ['zigzag', 'square', 'circle', 'triangle', 'swirl'] }])
 		)
 	);
 	await page.clock.install();
@@ -116,14 +114,14 @@ test('wave 5 ends with the kraken: the others swim off and it takes 3 spells', a
 	// Just the kraken now, and no new creatures while it's here.
 	await page.clock.runFor(3000);
 	const fight = await state(page);
-	expect(fight).toMatchObject({ wave: 5, kraken: 0 });
+	expect(fight).toMatchObject({ wave: 3, kraken: 0 });
 	expect(fight.creatures).toHaveLength(1);
 	for (let hit = 1; hit <= 3; hit++) {
 		await draw(page, (await state(page)).creatures[0]);
 		await page.clock.runFor(1500);
 		if (hit < 3) expect((await state(page)).kraken).toBe(hit);
 	}
-	expect(await state(page)).toMatchObject({ wave: 6, kraken: null });
+	expect(await state(page)).toMatchObject({ wave: 4, kraken: null });
 });
 
 test('asks to turn the phone sideways in portrait', async ({ page }) => {

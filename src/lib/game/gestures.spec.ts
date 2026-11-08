@@ -27,7 +27,6 @@ describe('classify', () => {
 		expect(classify(draw(guide('zigzag')))).toBe('zigzag');
 		expect(classify(draw(guide('square')))).toBe('square');
 		expect(classify(draw(guide('triangle')))).toBe('triangle');
-		expect(classify(draw(guide('star')))).toBe('star');
 	});
 
 	it('accepts wobbly triangles, any way round, from any corner or mid-side', () => {
@@ -50,23 +49,6 @@ describe('classify', () => {
 			{ x: 0.5, y: 0 }
 		];
 		expect(classify(draw(down, 200, 3))).toBe('triangle');
-	});
-
-	it('accepts wobbly stars, either way round, and with uneven points', () => {
-		const star = guide('star');
-		for (let seed = 1; seed < 50; seed++) {
-			expect(classify(draw(star, 200, 6, seed))).toBe('star');
-			expect(classify(draw([...star].reverse(), 160, 4, seed))).toBe('star');
-		}
-		const lopsided: Point[] = [
-			{ x: 0.5, y: 0 },
-			{ x: 0.8, y: 1 },
-			{ x: 0, y: 0.35 },
-			{ x: 1, y: 0.4 },
-			{ x: 0.15, y: 0.95 },
-			{ x: 0.5, y: 0.05 }
-		];
-		expect(classify(draw(lopsided, 220, 4))).toBe('star');
 	});
 
 	it('keeps squares and triangles drawn round past the start, and diamonds, as they were', () => {
