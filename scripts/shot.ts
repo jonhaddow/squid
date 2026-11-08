@@ -17,7 +17,7 @@ page.on('pageerror', (e) => console.log('pageerror:', e.message));
 await page.goto(`http://localhost:${port}/`);
 await page.waitForTimeout(1000);
 if (args.includes('--play')) {
-	await page.getByLabel('Play as squid 1').click();
+	await page.getByLabel('Play', { exact: true }).click();
 	await page.waitForTimeout(8000);
 }
 if (args.includes('--dress')) {

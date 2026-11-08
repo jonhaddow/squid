@@ -4,12 +4,12 @@ import {
 	finishWave,
 	isBossWave,
 	firstCreatures,
-	loadPlayers,
+	loadPlayer,
 	newPlayer,
 	nextShape,
 	planWave,
 	TOP_WAVE,
-	savePlayers
+	savePlayer
 } from './progress.ts';
 
 function memory() {
@@ -20,26 +20,32 @@ function memory() {
 	};
 }
 
-describe('players', () => {
+describe('player', () => {
 	it('fills in new fields for older saves', () => {
 		const store = memory();
 		store.setItem('squid-spells-v1', JSON.stringify([{ level: 3, stars: 9 }]));
-		expect(loadPlayers(store)[0]).toMatchObject({ level: 3, stars: 9, name: '', hats: [] });
+		expect(loadPlayer(store)).toMatchObject({ level: 3, stars: 9, best: 0, name: '', hats: [] });
 	});
 
-	it('starts with two fresh squids and saves them', () => {
+	it('keeps the first squid of an old two-squid save', () => {
 		const store = memory();
-		const players = loadPlayers(store);
-		expect(players).toHaveLength(2);
-		players[1].stars = 7;
-		savePlayers(store, players);
-		expect(loadPlayers(store)[1].stars).toBe(7);
+		store.setItem('squid-spells-v1', JSON.stringify([{ stars: 4 }, { stars: 7 }]));
+		expect(loadPlayer(store).stars).toBe(4);
+	});
+
+	it('starts with a fresh squid and saves it', () => {
+		const store = memory();
+		const player = loadPlayer(store);
+		expect(player.stars).toBe(0);
+		player.best = 12;
+		savePlayer(store, player);
+		expect(loadPlayer(store).best).toBe(12);
 	});
 
 	it('survives junk in storage', () => {
 		const store = memory();
 		store.setItem('squid-spells-v1', '{oops');
-		expect(loadPlayers(store)[0].level).toBe(1);
+		expect(loadPlayer(store).level).toBe(1);
 	});
 
 	it('unlocks a new hat each wave without changing what they wear', () => {
@@ -53,21 +59,20 @@ describe('players', () => {
 
 	it('keeps a name, trimmed to fit', () => {
 		const store = memory();
-		store.setItem('squid-spells-v1', JSON.stringify([{ name: 7 }, { name: 'Princess Sparkles' }]));
-		const [a, b] = loadPlayers(store);
-		expect(a.name).toBe('');
-		expect(b.name).toBe('Princess Spa');
+		store.setItem('squid-spells-v1', JSON.stringify([{ name: 'Princess Sparkles' }]));
+		expect(loadPlayer(store).name).toBe('Princess Spa');
+		store.setItem('squid-spells-v1', JSON.stringify([{ name: 7 }]));
+		expect(loadPlayer(store).name).toBe('');
 	});
 
 	it('keeps a chosen colour and outfit, but not a colour off the palette', () => {
 		const store = memory();
-		const players = loadPlayers(store);
-		Object.assign(players[0], { color: '#2ed8a3', neck: 'bowtie', face: 'shades' });
-		players[1].color = 'red';
-		savePlayers(store, players);
-		const [a, b] = loadPlayers(store);
-		expect(a).toMatchObject({ color: '#2ed8a3', neck: 'bowtie', face: 'shades' });
-		expect(b.color).toBe('#ff7a3d');
+		const player = loadPlayer(store);
+		Object.assign(player, { color: '#2ed8a3', neck: 'bowtie', face: 'shades' });
+		savePlayer(store, player);
+		expect(loadPlayer(store)).toMatchObject({ color: '#2ed8a3', neck: 'bowtie', face: 'shades' });
+		store.setItem('squid-spells-v1', JSON.stringify([{ color: 'red' }]));
+		expect(loadPlayer(store).color).toBe('#b45cff');
 	});
 });
 

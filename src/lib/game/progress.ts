@@ -1,4 +1,4 @@
-// Each kid's squid and how far they've got, kept in the browser (localStorage).
+// The device's squid and how far it's got, kept in the browser (localStorage).
 // Pure apart from the storage passed in, so it's unit tested.
 import { SHAPES, type Mode, type Shape } from './gestures.ts';
 
@@ -18,6 +18,8 @@ export type Player = {
 	/** The wave they're on in easy mode, from 1 (saved as `level` from before waves). Hard mode starts at 1 each game. */
 	level: number;
 	stars: number;
+	/** Most friends made in one hard-mode game: the leaderboard score. */
+	best: number;
 	hats: Hat[];
 	hat: Hat | null;
 	neck: Neck | null;
@@ -37,8 +39,6 @@ export const PALETTE = [
 	'#ff4d4d',
 	'#8a8fa8'
 ];
-/** Each squid's colour to start with. */
-export const COLORS = PALETTE.slice(0, 2);
 /** How a squid looks: what the drawing needs. */
 export type Look = Pick<Player, 'color' | 'hat' | 'neck' | 'face'>;
 
@@ -46,12 +46,13 @@ const KEY = 'squid-spells-v1';
 /** Long enough for any kid's name, short enough to fit under the squid. */
 export const NAME_MAX = 12;
 
-export function newPlayer(color: string): Player {
+export function newPlayer(color = PALETTE[0]): Player {
 	return {
 		name: '',
 		color,
 		level: 1,
 		stars: 0,
+		best: 0,
 		hats: [],
 		hat: null,
 		neck: null,
@@ -62,26 +63,25 @@ export function newPlayer(color: string): Player {
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
 
-export function loadPlayers(store: Store): Player[] {
-	const fresh = COLORS.map(newPlayer);
+/** One squid per device. Saved as a list, as when there were two: the first is kept. */
+export function loadPlayer(store: Store): Player {
+	const fresh = newPlayer();
 	try {
 		const saved = JSON.parse(store.getItem(KEY) ?? 'null') as Partial<Player>[] | null;
 		if (!Array.isArray(saved)) return fresh;
-		return fresh.map((p, i) => {
-			const player = { ...p, ...saved[i] };
-			// Only colours from the palette: the drawing code needs a #rrggbb.
-			if (!PALETTE.includes(player.color)) player.color = p.color;
-			player.name = typeof player.name === 'string' ? player.name.slice(0, NAME_MAX) : '';
-			return player;
-		});
+		const player = { ...fresh, ...saved[0] };
+		// Only colours from the palette: the drawing code needs a #rrggbb.
+		if (!PALETTE.includes(player.color)) player.color = fresh.color;
+		player.name = typeof player.name === 'string' ? player.name.slice(0, NAME_MAX) : '';
+		return player;
 	} catch {
 		return fresh;
 	}
 }
 
-export function savePlayers(store: Store, players: Player[]) {
+export function savePlayer(store: Store, player: Player) {
 	try {
-		store.setItem(KEY, JSON.stringify(players));
+		store.setItem(KEY, JSON.stringify([player]));
 	} catch {
 		// Private mode or full storage: play on without saving.
 	}

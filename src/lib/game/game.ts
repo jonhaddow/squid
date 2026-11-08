@@ -412,9 +412,13 @@ export class Game {
 				this.fighting = false;
 				this.nextWave();
 			}
-		} else if (++this.friends % WAVE === 0) {
-			if (isBossWave(this.wave)) this.startKraken();
-			else this.nextWave();
+		} else {
+			this.friends++;
+			if (this.mode === 'hard') this.player.best = Math.max(this.player.best, this.friends);
+			if (this.friends % WAVE === 0) {
+				if (isBossWave(this.wave)) this.startKraken();
+				else this.nextWave();
+			}
 		}
 		this.events.save();
 	}

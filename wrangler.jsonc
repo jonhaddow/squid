@@ -4,7 +4,7 @@
 	"compatibility_date": "2026-10-03",
 	"compatibility_flags": ["nodejs_als"],
 	"main": ".svelte-kit/cloudflare/_worker.js",
-	// Every page is prerendered, so the Worker only ever serves these files.
+	// Every page is prerendered: the Worker serves these files, and runs only for /api/scores.
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".svelte-kit/cloudflare"
@@ -14,5 +14,15 @@
 	"observability": {
 		"enabled": true
 	},
-	"preview_urls": false
+	// Off: branch previews would share the live D1 database.
+	"preview_urls": false,
+	// The leaderboard: one row per device. Created with --jurisdiction eu.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "squid",
+			"database_id": "f7c00a54-881f-4b98-9d43-fb58f04ad323",
+			"migrations_dir": "migrations"
+		}
+	]
 }
