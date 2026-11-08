@@ -6,7 +6,7 @@ Every 3rd wave (3, 6, 9...) ends with the kraken: the other creatures swim off, 
 
 Each device has one squid, with a dressing room (the T-shirt button): a name, a colour, a hat (one unlocked every 10 friends, to put on when they like), something round its neck and glasses.
 
-Both modes are endless: every 10 friends unlocks a hat. Easy mode has no losing, stays at the same pace and remembers how far they got. Hard mode is faster, speeds up and gets busier every 10 friends, has 3 hearts and a game over, and starts again each game.
+Both modes are endless: every 10 friends unlocks a hat. Easy mode has no losing, stays at the same pace and remembers how far they got. Hard mode is faster, speeds up every 10 friends with no limit (and gets busier, up to a point), has 3 hearts and a game over, and starts again each game.
 
 - Install: open it in Safari (or Chrome), then Share → Add to Home Screen. The glowing phone button on the start screen shows the steps (or installs it straight away in Chrome on Android).
 - Landscape only (a rotate prompt shows in portrait), installable as a PWA, and it plays offline.
