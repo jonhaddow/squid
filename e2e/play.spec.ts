@@ -20,7 +20,7 @@ test('the first creature waits to be taught, then a drawn zap makes it a friend'
 }) => {
 	await page.goto('/');
 	await page.getByLabel('Play', { exact: true }).click();
-	await page.getByRole('button', { name: 'Endless' }).click();
+	await page.getByRole('button', { name: 'Chill' }).click();
 	await expect.poll(async () => (await state(page)).teaching, { timeout: 15_000 }).toBe('zigzag');
 
 	await draw(page, 'circle'); // the wrong shape fizzles
@@ -40,7 +40,7 @@ test('easy mode teaches a square for the jellyfish, not a swirl', async ({ page 
 	await page.clock.install();
 	await page.goto('/');
 	await page.getByLabel('Play', { exact: true }).click();
-	await page.getByRole('button', { name: 'Endless' }).click();
+	await page.getByRole('button', { name: 'Chill' }).click();
 	await page.clock.runFor(8000);
 	expect((await state(page)).teaching).toBe('zigzag');
 	await draw(page, 'zigzag');
@@ -129,7 +129,7 @@ test('wave 3 ends with the kraken: the others swim off and it takes 3 spells', a
 	await page.clock.install();
 	await page.goto('/');
 	await page.getByLabel('Play', { exact: true }).click();
-	await page.getByRole('button', { name: 'Endless' }).click();
+	await page.getByRole('button', { name: 'Chill' }).click();
 	for (;;) {
 		await page.clock.runFor(500);
 		const now = await state(page);

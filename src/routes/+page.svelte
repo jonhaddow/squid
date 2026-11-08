@@ -5,7 +5,7 @@
 	import InstallHint from '#lib/components/InstallHint.svelte';
 	import ThingIcon from '#lib/components/ThingIcon.svelte';
 	import { unlock, sounds } from '#lib/game/audio.ts';
-	import { Game, HEARTS } from '#lib/game/game.ts';
+	import { Game } from '#lib/game/game.ts';
 	import type { Mode } from '#lib/game/gestures.ts';
 	import type { Thing } from '#lib/game/sprites.ts';
 	import {
@@ -119,8 +119,6 @@
 
 	/** Medals for the top 3 on the leaderboard. */
 	const PLACES = ['1st', '2nd', '3rd'];
-	const HEART =
-		'M12 21C5 15.5 2 12.3 2 8.5A4.8 4.8 0 0 1 12 6a4.8 4.8 0 0 1 10 2.5c0 3.8-3 7-10 12.5z';
 
 	const save = () => savePlayer(localStorage, $state.snapshot(player));
 
@@ -302,14 +300,19 @@
 							stroke-linecap="round"
 						/>
 					</svg>
-					Endless
+					Chill
 				</button>
 				<button class="block mode hard" onclick={() => play('hard')}>
-					<span class="hearts" aria-hidden="true">
-						{#each { length: HEARTS }, i (i)}
-							<svg viewBox="0 0 24 24"><path d={HEART} fill="currentColor" /></svg>
-						{/each}
-					</span>
+					<svg viewBox="0 0 24 24" aria-hidden="true">
+						<path
+							d="M7 3h10v2h3.5v2.5a4 4 0 0 1-4.2 4A5.5 5.5 0 0 1 13 14v3h3v3H8v-3h3v-3a5.5 5.5 0 0 1-3.3-2.5 4 4 0 0 1-4.2-4V5H7zM5.5 7v.5a2 2 0 0 0 1.6 2A6 6 0 0 1 7 7zm13 0H17a6 6 0 0 1-.1 2.5 2 2 0 0 0 1.6-2z"
+							fill="currentColor"
+						/>
+						<path
+							d="M12 5.5l.9 1.9 2 .2-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.2z"
+							fill="#ff6b8b"
+						/>
+					</svg>
 					Challenge
 				</button>
 			</div>
@@ -509,15 +512,6 @@
 	}
 	.hard:active {
 		box-shadow: 0 1px 0 #b02a49;
-	}
-	.hearts {
-		display: flex;
-		justify-content: center;
-		gap: 4px;
-	}
-	.hearts svg {
-		width: 28%;
-		color: #fff;
 	}
 	.back {
 		position: absolute;
