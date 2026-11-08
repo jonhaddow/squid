@@ -111,14 +111,15 @@ export function classify(raw: Point[]): Shape | null {
 	if (size < MIN_SIZE) return null;
 
 	const points = resample(raw);
-	if (isLine(raw)) return 'line';
 	const loops = Math.abs(netTurning(points)) / (2 * Math.PI);
 	if (loops >= 1.6) return 'swirl';
 	if (loops >= 0.65) return 'circle';
 
+	// Zigzags before lines: a flat zigzag stays close to the line between its ends.
 	const min = size * 0.2;
 	const back = Math.max(reversals(xs, min), reversals(ys, min));
 	if (back >= 2 && loops < 0.6) return 'zigzag';
+	if (isLine(raw)) return 'line';
 	return null;
 }
 

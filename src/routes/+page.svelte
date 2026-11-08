@@ -71,7 +71,7 @@
 	}
 
 	/** Runs the game on the canvas while it's on screen. */
-	function run(player: Player, mode: Mode) {
+	function run(player: Player) {
 		return (canvas: HTMLCanvasElement) => {
 			// Untracked: the game changes the player as it goes (stars, level), which
 			// mustn't restart it. A new level restarts it through `round`.
@@ -182,7 +182,7 @@
 		</section>
 	{:else}
 		{#key round}
-			<canvas class="game" {@attach run(players[playing], mode)}></canvas>
+			<canvas class="game" {@attach run(players[playing])}></canvas>
 		{/key}
 		<button class="block corner" onclick={home} aria-label="Home">
 			<svg viewBox="0 0 24 24" aria-hidden="true"

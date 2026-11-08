@@ -56,6 +56,14 @@ describe('classify', () => {
 			{ x: 1, y: 0 }
 		];
 		for (const shape of [down, across, n]) expect(classify(draw(shape, 180, 5))).toBe('zigzag');
+		// Wide and flat, ending higher than it started: still not a line.
+		const flat: Point[] = [
+			{ x: 0, y: 0.27 },
+			{ x: 0.33, y: 0 },
+			{ x: 0.67, y: 0.27 },
+			{ x: 1, y: 0 }
+		];
+		expect(classify(draw(flat, 300))).toBe('zigzag');
 	});
 
 	it('ignores taps, short strokes and squiggles', () => {

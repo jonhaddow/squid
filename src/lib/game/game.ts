@@ -259,13 +259,7 @@ export class Game {
 		this.spawnIn -= dt;
 		const swimming = this.mobs.filter((b) => b.state !== 'happy').length;
 		const teaching = this.teaching() !== undefined;
-		if (
-			this.queue.length &&
-			this.spawnIn <= 0 &&
-			swimming < this.crowd &&
-			!teaching &&
-			!this.over
-		) {
+		if (this.queue.length && this.spawnIn <= 0 && swimming < this.crowd && !teaching) {
 			this.mobs.push({
 				shape: this.queue.shift()!,
 				x: this.w + m,
@@ -287,15 +281,16 @@ export class Game {
 				const learning = !this.player.learned.includes(mob.shape) && !mob.targeted;
 				const stopAt = this.w * 0.62;
 				if (!(learning && mob.x <= stopAt)) mob.x -= this.speed * dt;
-				if (mob.x - m * 0.35 < sx + s * 0.3) {
+				// A creature already hit by a spell can't bump.
+				if (!mob.targeted && mob.x - m * 0.35 < sx + s * 0.3) {
 					// Bump! The squid spins and the creature backs off.
 					sounds.bump();
 					this.spin = 1;
 					mob.state = 'back';
 					mob.t = 0;
 					this.burst({ x: sx + s * 0.3, y: mob.y }, 'bubble', 8, '#bff3ff');
-					this.miss();
 					if (this.mode === 'hard') this.loseHeart();
+					else this.miss();
 				}
 			} else if (mob.state === 'back') {
 				mob.x += this.w * 0.7 * dt * Math.max(0, 1 - mob.t);
