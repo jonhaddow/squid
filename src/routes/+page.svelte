@@ -11,13 +11,13 @@
 	import {
 		FACES,
 		HATS,
+		isLocked,
 		loadPlayer,
 		NAME_MAX,
 		NECKS,
 		newPlayer,
 		PALETTE,
 		savePlayer,
-		type Hat,
 		type Look
 	} from '#lib/game/progress.ts';
 	import { syncScores, type Row } from '#lib/scores.ts';
@@ -263,14 +263,14 @@
 							onclick={() => wear({ [rail.kind]: null })}>{@render none()}</button
 						>
 						{#each rail.items as item (item)}
-							<!-- Hats are won, one a level: the rest show as shadows to play for. -->
-							{@const locked = rail.kind === 'hat' && !player.hats.includes(item as Hat)}
+							<!-- Prizes are won, one a wave: the rest show as shadows to play for. -->
+							{@const locked = isLocked(player, item)}
 							<button
 								class="tile"
 								class:on={player[rail.kind] === item}
 								class:locked
 								disabled={locked}
-								aria-label={locked ? 'Hat to win' : item}
+								aria-label={locked ? 'Prize to win' : item}
 								aria-pressed={player[rail.kind] === item}
 								onclick={() => wear({ [rail.kind]: item })}
 							>
@@ -643,12 +643,16 @@
 		display: block;
 	}
 	.rails {
+		--gap: min(1.2vw, 10px);
 		display: grid;
 		gap: 2.5vh;
+		/* As wide as the 8 colours: the longer rails (hats) wrap onto a second row. */
+		max-width: calc(8 * var(--tile) + 7 * var(--gap));
 	}
 	.rail {
 		display: flex;
-		gap: min(1.2vw, 10px);
+		flex-wrap: wrap;
+		gap: var(--gap);
 	}
 	.tile {
 		width: var(--tile);
@@ -683,7 +687,7 @@
 			0 0 0 4px var(--ink),
 			0 0 18px var(--c);
 	}
-	/* Hats not won yet: a dark shadow of the hat. */
+	/* Prizes not won yet: a dark shadow of the thing. */
 	.locked {
 		cursor: default;
 	}
