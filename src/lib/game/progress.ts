@@ -110,8 +110,9 @@ export function loadPlayer(store: Store): Player {
 	try {
 		const saved = JSON.parse(store.getItem(KEY) ?? 'null') as Partial<Player>[] | null;
 		if (!Array.isArray(saved)) return fresh;
-		const { hats, ...rest } = saved[0] as Partial<Player> & { hats?: Hat[] };
+		const { hats, ...rest } = (saved[0] ?? {}) as Partial<Player> & { hats?: Hat[] };
 		const player = { ...fresh, ...rest };
+		// A save from before `won`. One with both was written over by an older cached build: keep `won`.
 		if (hats && !rest.won) player.won = hats;
 		// Only colours from the palette: the drawing code needs a #rrggbb.
 		if (!PALETTE.includes(player.color)) player.color = fresh.color;

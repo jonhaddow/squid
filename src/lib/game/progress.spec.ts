@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+	FACES,
+	HATS,
+	NECKS,
 	isLocked,
 	PRIZES,
 	bossShapes,
@@ -65,6 +68,13 @@ describe('player', () => {
 		expect(won).toEqual(PRIZES);
 		expect(finishWave(p, 'easy')).toBeNull();
 		expect(isLocked(p, 'beanie')).toBe(false);
+	});
+
+	it('has every hat as a prize, and each prize in exactly one rail', () => {
+		expect(HATS.every((h) => PRIZES.includes(h))).toBe(true);
+		const all: readonly string[][] = [[...HATS], [...NECKS], [...FACES]];
+		for (const p of PRIZES) expect(all.filter((rail) => rail.includes(p))).toHaveLength(1);
+		expect(new Set(PRIZES).size).toBe(PRIZES.length);
 	});
 
 	it('keeps the first necks and glasses free, and locks the rest until won', () => {
