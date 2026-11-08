@@ -3,8 +3,9 @@
 // friend. In easy mode nothing hurts: a creature that reaches the squid just
 // bumps it and backs off, and creatures always swim at one speed. Hard mode is
 // faster, has 3 hearts and a game over. Both are endless: every WAVE friends
-// wins a hat and things get busier (and faster in hard mode), to a limit. A creature the child hasn't
-// cast yet stops, and a finger draws its shape until the child copies it.
+// wins a hat and things get busier (and faster in hard mode), to a limit. A
+// creature the child hasn't cast yet stops, and a finger draws its shape until
+// the child copies it.
 import { sounds, say, unlock } from './audio.ts';
 import { classify, guide, isAttempt, type Mode, type Point, type Shape } from './gestures.ts';
 import {

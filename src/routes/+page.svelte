@@ -542,6 +542,9 @@
 		background: rgba(255, 255, 255, 0.08);
 		border: 4px solid var(--ink);
 		border-radius: 0;
+		/* The page turns selection off, which can stop iOS typing in a field. */
+		-webkit-user-select: text;
+		user-select: text;
 	}
 	.name::placeholder {
 		color: rgba(255, 255, 255, 0.4);

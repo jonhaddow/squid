@@ -71,8 +71,7 @@ export function loadPlayers(store: Store): Player[] {
 			const player = { ...p, ...saved[i] };
 			// Only colours from the palette: the drawing code needs a #rrggbb.
 			if (!PALETTE.includes(player.color)) player.color = p.color;
-			if (typeof player.name !== 'string') player.name = '';
-			player.name = player.name.slice(0, NAME_MAX);
+			player.name = typeof player.name === 'string' ? player.name.slice(0, NAME_MAX) : '';
 			return player;
 		});
 	} catch {

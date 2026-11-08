@@ -51,17 +51,12 @@ describe('players', () => {
 
 	it('keeps a name, trimmed to fit', () => {
 		const store = memory();
-		const players = loadPlayers(store);
-		players[0].name = 'Bartholomew the Great';
-		savePlayers(store, players);
-		store.setItem(
-			'squid-spells-v1',
-			store.getItem('squid-spells-v1')!.replace('"name":""', '"name":7')
-		);
+		store.setItem('squid-spells-v1', JSON.stringify([{ name: 7 }, { name: 'Princess Sparkles' }]));
 		const [a, b] = loadPlayers(store);
-		expect(a.name).toBe('Bartholomew ');
-		expect(b.name).toBe('');
+		expect(a.name).toBe('');
+		expect(b.name).toBe('Princess Spa');
 	});
+
 	it('keeps a chosen colour and outfit, but not a colour off the palette', () => {
 		const store = memory();
 		const players = loadPlayers(store);
