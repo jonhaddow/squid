@@ -175,6 +175,15 @@ export function star(ctx: Ctx, r: number, fill: string) {
 	ctx.fill();
 }
 
+export function heart(ctx: Ctx, r: number, fill: string) {
+	ctx.beginPath();
+	ctx.moveTo(0, r * 0.9);
+	ctx.bezierCurveTo(-r * 1.6, -r * 0.1, -r * 0.6, -r * 1.2, 0, -r * 0.4);
+	ctx.bezierCurveTo(r * 0.6, -r * 1.2, r * 1.6, -r * 0.1, 0, r * 0.9);
+	ctx.fillStyle = fill;
+	ctx.fill();
+}
+
 export function drawHat(ctx: Ctx, s: number, hat: Hat) {
 	ctx.lineJoin = 'round';
 	if (hat === 'wizard') {
@@ -255,6 +264,7 @@ export type Creature = 'crab' | 'jelly' | 'puffer';
 export const CREATURE: Record<Shape, Creature> = {
 	zigzag: 'crab',
 	swirl: 'jelly',
+	square: 'jelly',
 	circle: 'puffer'
 };
 

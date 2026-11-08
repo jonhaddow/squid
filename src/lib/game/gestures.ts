@@ -1,12 +1,18 @@
-// Tells which spell shape a finger drew: a circle (shield), a zigzag (zap) or
-// a swirl (bubbles). Forgiving on purpose: a 6 year old's wobbly circle counts.
+// Tells which spell shape a finger drew: a circle (shield), a zigzag (zap), a
+// swirl (bubbles, hard mode) or a square (bubbles, easy mode). Forgiving on purpose: a 6 year old's wobbly circle counts.
 // It works on how much the line turns overall, so size, speed, direction and
 // where on the screen it was drawn don't matter.
 
-export type Shape = 'circle' | 'zigzag' | 'swirl';
+export type Shape = 'circle' | 'zigzag' | 'swirl' | 'square';
 export type Point = { x: number; y: number };
 
-export const SHAPES: Shape[] = ['zigzag', 'swirl', 'circle'];
+export type Mode = 'easy' | 'hard';
+
+/** The shapes each mode uses: easy swaps the swirl for a square. */
+export const SHAPES: Record<Mode, Shape[]> = {
+	easy: ['zigzag', 'square', 'circle'],
+	hard: ['zigzag', 'swirl', 'circle']
+};
 
 /** Strokes smaller than this (CSS px across) are taps, not shapes. */
 const MIN_SIZE = 40;
@@ -83,6 +89,30 @@ function reversals(values: number[], min: number): number {
 	return count;
 }
 
+/**
+ * A loop with straight sides and corners, not a smooth curve. Looks at how
+ * much the line turns over a few samples at each point: a circle turns a
+ * steady amount everywhere, a square turns almost nowhere apart from 3 or 4
+ * corners (more than 3 if the drawing starts mid-side).
+ */
+function isSquare(points: Point[]): boolean {
+	const k = 3;
+	let corners = 0;
+	let straight = 0;
+	let inCorner = false;
+	for (let i = k; i < points.length - k; i++) {
+		const a = Math.atan2(points[i].y - points[i - k].y, points[i].x - points[i - k].x);
+		const b = Math.atan2(points[i + k].y - points[i].y, points[i + k].x - points[i].x);
+		let d = Math.abs(b - a);
+		if (d > Math.PI) d = 2 * Math.PI - d;
+		if (d < Math.PI / 12) straight++;
+		const sharp = d > (Math.PI * 35) / 180;
+		if (sharp && !inCorner) corners++;
+		inCorner = sharp;
+	}
+	return corners >= 3 && straight / (points.length - 2 * k) >= 0.3;
+}
+
 export function classify(raw: Point[]): Shape | null {
 	if (raw.length < 4) return null;
 	const xs = raw.map((p) => p.x);
@@ -93,7 +123,8 @@ export function classify(raw: Point[]): Shape | null {
 	const points = resample(raw);
 	const loops = Math.abs(netTurning(points)) / (2 * Math.PI);
 	if (loops >= 1.6) return 'swirl';
-	if (loops >= 0.65) return 'circle';
+	// One loop: a square if it has corners, otherwise a circle.
+	if (loops >= 0.65) return isSquare(points) ? 'square' : 'circle';
 
 	const min = size * 0.2;
 	const back = Math.max(reversals(xs, min), reversals(ys, min));
@@ -114,6 +145,17 @@ export function guide(shape: Shape, n = 60): Point[] {
 		if (shape === 'circle') {
 			const a = -Math.PI / 2 + t * Math.PI * 2;
 			out.push({ x: 0.5 + 0.5 * Math.cos(a), y: 0.5 + 0.5 * Math.sin(a) });
+		} else if (shape === 'square') {
+			// Clockwise from the top left corner.
+			const side = Math.min(3, Math.floor(t * 4));
+			const f = t * 4 - side;
+			const [x, y] = [
+				[f, 0],
+				[1, f],
+				[1 - f, 1],
+				[0, 1 - f]
+			][side];
+			out.push({ x: 0.1 + 0.8 * x, y: 0.1 + 0.8 * y });
 		} else if (shape === 'swirl') {
 			const a = t * Math.PI * 4.4;
 			const r = 0.08 + 0.42 * t;

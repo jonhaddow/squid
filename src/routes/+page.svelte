@@ -3,14 +3,19 @@
 	import { dev } from '$app/env';
 	import SquidPreview from '#lib/components/SquidPreview.svelte';
 	import { unlock, sounds } from '#lib/game/audio.ts';
-	import { Game } from '#lib/game/game.ts';
+	import { Game, HEARTS } from '#lib/game/game.ts';
+	import type { Mode } from '#lib/game/gestures.ts';
 	import { loadPlayers, nextHat, savePlayers, type Hat, type Player } from '#lib/game/progress.ts';
 
 	let players = $state<Player[]>([]);
+	/** The squid tapped on the start screen, now choosing easy or hard. */
+	let chosen = $state<number | null>(null);
 	/** Which kid is playing, or null on the start screen. */
 	let playing = $state<number | null>(null);
-	let done = $state<{ hat: Hat | null } | null>(null);
-	/** Bumped to restart the game for the next level. */
+	let mode = $state<Mode>('easy');
+	/** How the level ended: all friends (and maybe a new hat), or out of hearts. */
+	let ended = $state<{ won: true; hat: Hat | null } | { won: false } | null>(null);
+	/** Bumped to restart the game: the next level, or a retry. */
 	let round = $state(0);
 	let portrait = $state(false);
 
@@ -27,13 +32,23 @@
 		return () => query.removeEventListener('change', change);
 	});
 
+	const HEART =
+		'M12 21C5 15.5 2 12.3 2 8.5A4.8 4.8 0 0 1 12 6a4.8 4.8 0 0 1 10 2.5c0 3.8-3 7-10 12.5z';
+
 	const save = () => savePlayers(localStorage, $state.snapshot(players));
 
 	function pick(i: number) {
 		unlock();
+		sounds.pop();
+		chosen = i;
+	}
+
+	function play(m: Mode) {
 		sounds.friend();
-		done = null;
-		playing = i;
+		mode = m;
+		ended = null;
+		playing = chosen;
+		chosen = null;
 	}
 
 	function changeHat(i: number) {
@@ -43,15 +58,15 @@
 		save();
 	}
 
-	function nextLevel() {
+	function again() {
 		sounds.pop();
-		done = null;
+		ended = null;
 		round++;
 	}
 
 	function home() {
 		sounds.pop();
-		done = null;
+		ended = null;
 		playing = null;
 	}
 
@@ -62,9 +77,10 @@
 			// mustn't restart it. A new level restarts it through `round`.
 			const game = untrack(
 				() =>
-					new Game(canvas, player, {
+					new Game(canvas, player, mode, {
 						save,
-						levelDone: (hat) => (done = { hat })
+						levelDone: (hat) => (ended = { won: true, hat }),
+						gameOver: () => (ended = { won: false })
 					})
 			);
 			window.__squid = game;
@@ -98,7 +114,40 @@
 </script>
 
 <main>
-	{#if playing === null}
+	{#if playing === null && chosen !== null}
+		<section class="start">
+			<div class="modes">
+				<button class="block mode easy" onclick={() => play('easy')}>
+					<svg viewBox="0 0 24 24" aria-hidden="true">
+						<circle cx="12" cy="12" r="10" fill="currentColor" />
+						<circle cx="8.5" cy="10" r="1.6" fill="#5dff9d" />
+						<circle cx="15.5" cy="10" r="1.6" fill="#5dff9d" />
+						<path
+							d="M7.5 14a5 5 0 0 0 9 0"
+							fill="none"
+							stroke="#5dff9d"
+							stroke-width="1.8"
+							stroke-linecap="round"
+						/>
+					</svg>
+					Easy
+				</button>
+				<button class="block mode hard" onclick={() => play('hard')}>
+					<span class="hearts" aria-hidden="true">
+						{#each { length: HEARTS }, i (i)}
+							<svg viewBox="0 0 24 24"><path d={HEART} fill="currentColor" /></svg>
+						{/each}
+					</span>
+					Hard
+				</button>
+			</div>
+			<button class="back" onclick={() => (chosen = null)} aria-label="Back">
+				<svg viewBox="0 0 24 24" aria-hidden="true"
+					><path d="M15 4l-8 8 8 8" fill="none" stroke="currentColor" stroke-width="3" /></svg
+				>
+			</button>
+		</section>
+	{:else if playing === null}
 		<section class="start">
 			<h1>Squid Spells</h1>
 			<div class="squids">
@@ -140,19 +189,32 @@
 				><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z" fill="currentColor" /></svg
 			>
 		</button>
-		{#if done}
+		{#if ended}
 			<div class="done">
-				<p class="cheer">You did it!</p>
+				<p class="cheer">{ended.won ? 'You did it!' : 'Oh no!'}</p>
 				<div class="row">
 					<button class="block big" onclick={home} aria-label="Home">
 						<svg viewBox="0 0 24 24" aria-hidden="true"
 							><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z" fill="currentColor" /></svg
 						>
 					</button>
-					<button class="block big go" onclick={nextLevel} aria-label="Next level">
-						<svg viewBox="0 0 24 24" aria-hidden="true"
-							><path d="M7 4l13 8-13 8z" fill="currentColor" /></svg
-						>
+					<button
+						class="block big go"
+						onclick={again}
+						aria-label={ended.won ? 'Next level' : 'Try again'}
+					>
+						<svg viewBox="0 0 24 24" aria-hidden="true">
+							{#if ended.won}
+								<path d="M7 4l13 8-13 8z" fill="currentColor" />
+							{:else}
+								<path
+									d="M19 12a7 7 0 1 1-2.1-5M19 3v5h-5"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="3"
+								/>
+							{/if}
+						</svg>
 					</button>
 				</div>
 			</div>
@@ -235,6 +297,55 @@
 	.stars svg {
 		width: 26px;
 		fill: var(--gold);
+	}
+
+	.modes {
+		display: flex;
+		gap: 6vw;
+	}
+	.mode {
+		width: min(34vw, 260px);
+		height: min(56vh, 220px);
+		align-content: center;
+		gap: 4vh;
+		font-size: clamp(28px, 9vh, 56px);
+	}
+	.mode svg {
+		width: 40%;
+		height: auto;
+	}
+	.easy {
+		background: #5dff9d;
+		box-shadow: 0 6px 0 #1f9e55;
+	}
+	.easy:active {
+		box-shadow: 0 1px 0 #1f9e55;
+	}
+	.hard {
+		background: #ff6b8b;
+		box-shadow: 0 6px 0 #b02a49;
+	}
+	.hard:active {
+		box-shadow: 0 1px 0 #b02a49;
+	}
+	.hearts {
+		display: flex;
+		justify-content: center;
+		gap: 4px;
+	}
+	.hearts svg {
+		width: 28%;
+		color: #fff;
+	}
+	.back {
+		position: absolute;
+		top: max(12px, env(safe-area-inset-top));
+		left: max(14px, env(safe-area-inset-left));
+		width: 52px;
+		height: 52px;
+		padding: 8px;
+		background: none;
+		border: 0;
 	}
 
 	.hat {

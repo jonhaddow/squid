@@ -1,11 +1,21 @@
 // The game: grumpy sea creatures swim towards your squid, each showing the
 // shape it needs. Draw that shape anywhere and the squid's spell makes it a
-// friend. Nothing hurts: a creature that reaches the squid just bumps it and
-// backs off. Level 1 stops each new kind of creature and shows a finger
+// friend. In easy mode nothing hurts: a creature that reaches the squid just
+// bumps it and backs off. Hard mode is faster, has 3 hearts and a game over,
+// and doesn't go easier after misses. Level 1 stops each new kind of creature and shows a finger
 // drawing its shape until the child copies it.
 import { sounds, say, unlock } from './audio.ts';
-import { classify, guide, isAttempt, type Point, type Shape } from './gestures.ts';
-import { befriended, finishLevel, missed, planLevel, type Hat, type Player } from './progress.ts';
+import { classify, guide, isAttempt, type Mode, type Point, type Shape } from './gestures.ts';
+import {
+	befriended,
+	finishLevel,
+	HARD_EASE,
+	levelOf,
+	missed,
+	planLevel,
+	type Hat,
+	type Player
+} from './progress.ts';
 import * as art from './sprites.ts';
 
 type Mob = {
@@ -39,7 +49,11 @@ export type Events = {
 	save(): void;
 	/** Every creature is a friend. `hat` is the one just won, if any. */
 	levelDone(hat: Hat | null): void;
+	/** Hard mode: out of hearts. */
+	gameOver(): void;
 };
+
+export const HEARTS = 3;
 
 const SPELL_TIME = 0.45;
 const FONT = '"Luckiest Guy", system-ui, sans-serif';
@@ -72,17 +86,22 @@ export class Game {
 	private spin = 0;
 	private flash = 0;
 	private finished = false;
+	private over = false;
 	private celebrateIn = -1;
+	private hearts = HEARTS;
+	/** Seconds the lost heart flashes in the corner. */
+	private hurt = 0;
 
 	paused = false;
 
 	constructor(
 		private canvas: HTMLCanvasElement,
 		private player: Player,
+		private mode: Mode,
 		private events: Events
 	) {
 		this.ctx = canvas.getContext('2d')!;
-		const plan = planLevel(player.level, 1);
+		const plan = planLevel(levelOf(player, mode), 1, mode);
 		this.queue = plan.creatures;
 		this.total = plan.creatures.length;
 		this.gap = plan.gap;
@@ -128,7 +147,9 @@ export class Game {
 			total: this.total,
 			creatures: this.mobs.filter((m) => m.state !== 'happy').map((m) => m.shape),
 			teaching: this.teaching()?.shape ?? null,
-			finished: this.finished
+			finished: this.finished,
+			hearts: this.mode === 'hard' ? this.hearts : null,
+			over: this.over
 		};
 	}
 
@@ -140,8 +161,12 @@ export class Game {
 	private get mobSize() {
 		return this.h * 0.22;
 	}
+	/** Easy mode slows down after misses; hard mode doesn't. */
+	private get ease() {
+		return this.mode === 'hard' ? HARD_EASE : this.player.ease;
+	}
 	private get speed() {
-		return (this.w * 0.86 * this.levelSpeed * this.player.ease) / 16;
+		return (this.w * 0.86 * this.levelSpeed * this.ease) / 16;
 	}
 
 	/** A creature whose shape the child hasn't cast yet waits, and the finger shows how. */
@@ -177,7 +202,7 @@ export class Game {
 		this.drawing = false;
 		const trail = this.trail;
 		this.trail = [];
-		if (this.finished) return;
+		if (this.finished || this.over) return;
 		const shape = classify(trail);
 		if (!shape && !isAttempt(trail)) {
 			// A tap: just bubbles.
@@ -209,11 +234,12 @@ export class Game {
 		if (target.shape === 'zigzag') {
 			sounds.zap();
 			this.flash = 1;
-		} else if (target.shape === 'swirl') sounds.bubbles();
+		} else if (target.shape === 'swirl' || target.shape === 'square') sounds.bubbles();
 		else sounds.shield();
 	}
 
 	private miss() {
+		if (this.mode === 'hard') return;
 		this.misses++;
 		this.player.ease = missed(this.player.ease);
 		this.events.save();
@@ -224,6 +250,7 @@ export class Game {
 	private update(dt: number) {
 		this.t += dt;
 		this.spin = Math.max(0, this.spin - dt * 1.5);
+		this.hurt = Math.max(0, this.hurt - dt);
 		this.flash = Math.max(0, this.flash - dt * 4);
 		const { x: sx, s } = this.squid;
 		const m = this.mobSize;
@@ -242,23 +269,28 @@ export class Game {
 				t: 0,
 				targeted: false
 			});
-			this.spawnIn = this.gap / this.player.ease;
+			this.spawnIn = this.gap / this.ease;
 		}
 
 		for (const mob of this.mobs) {
 			mob.t += dt;
-			if (mob.state === 'swim') {
+			if (this.over && mob.state !== 'happy') {
+				// Game over: everyone swims home.
+				mob.x += this.w * 0.5 * dt;
+			} else if (mob.state === 'swim') {
 				const learning = !this.player.learned.includes(mob.shape) && !mob.targeted;
 				const stopAt = this.w * 0.62;
 				if (!(learning && mob.x <= stopAt)) mob.x -= this.speed * dt;
-				if (mob.x - m * 0.35 < sx + s * 0.3) {
+				// A creature already hit by a spell can't bump.
+				if (!mob.targeted && mob.x - m * 0.35 < sx + s * 0.3) {
 					// Bump! The squid spins and the creature backs off.
 					sounds.bump();
 					this.spin = 1;
 					mob.state = 'back';
 					mob.t = 0;
 					this.burst({ x: sx + s * 0.3, y: mob.y }, 'bubble', 8, '#bff3ff');
-					this.miss();
+					if (this.mode === 'hard') this.loseHeart();
+					else this.miss();
 				}
 			} else if (mob.state === 'back') {
 				mob.x += this.w * 0.7 * dt * Math.max(0, 1 - mob.t);
@@ -303,7 +335,7 @@ export class Game {
 				color: 'rgba(191,243,255,0.5)'
 			});
 
-		if (!this.finished && this.friends === this.total && this.celebrateIn < 0)
+		if (!this.finished && !this.over && this.friends === this.total && this.celebrateIn < 0)
 			this.celebrateIn = 0.8;
 		if (this.celebrateIn > 0) {
 			this.celebrateIn -= dt;
@@ -318,9 +350,14 @@ export class Game {
 		mob.t = 0;
 		this.friends++;
 		this.player.stars++;
-		this.player.ease = befriended(this.player.ease);
+		if (this.mode === 'easy') this.player.ease = befriended(this.player.ease);
 		this.burst({ x: mob.x, y: mob.y }, 'heart', 8, '#ff5fa2');
-		this.burst({ x: mob.x, y: mob.y }, shape === 'swirl' ? 'bubble' : 'spark', 14, '#ffe066');
+		this.burst(
+			{ x: mob.x, y: mob.y },
+			art.CREATURE[shape] === 'jelly' ? 'bubble' : 'spark',
+			14,
+			'#ffe066'
+		);
 		this.bits.push({
 			kind: 'star',
 			x: mob.x,
@@ -336,9 +373,20 @@ export class Game {
 		this.events.save();
 	}
 
+	private loseHeart() {
+		this.hearts--;
+		this.hurt = 1;
+		if (this.hearts > 0) return;
+		this.over = true;
+		this.queue = [];
+		sounds.fizzle();
+		say('Oh no! Try again!');
+		this.events.gameOver();
+	}
+
 	private celebrate() {
 		this.finished = true;
-		const hat = finishLevel(this.player);
+		const hat = finishLevel(this.player, this.mode);
 		this.events.save();
 		sounds.fanfare();
 		say(hat ? 'You did it! A new hat!' : 'You did it!');
@@ -377,7 +425,7 @@ export class Game {
 			ctx.save();
 			ctx.translate(mob.x, mob.y + bob);
 			art.drawCreature(ctx, art.CREATURE[mob.shape], m, this.t + mob.phase, mob.state === 'happy');
-			if (mob.state === 'happy' && mob.shape === 'swirl') {
+			if (mob.state === 'happy' && art.CREATURE[mob.shape] === 'jelly') {
 				ctx.beginPath();
 				ctx.arc(0, 0, m * 0.55, 0, Math.PI * 2);
 				ctx.strokeStyle = 'rgba(191,243,255,0.8)';
@@ -438,7 +486,7 @@ export class Game {
 			}
 			ctx.stroke();
 			ctx.restore();
-		} else if (spell.shape === 'swirl') {
+		} else if (spell.shape === 'swirl' || spell.shape === 'square') {
 			for (let i = 0; i < 6; i++) {
 				const k = Math.max(0, f - i * 0.06);
 				const x = from.x + (to.x - from.x) * k;
@@ -476,9 +524,7 @@ export class Game {
 				ctx.lineWidth = 1.5;
 				ctx.stroke();
 			} else if (b.kind === 'heart') {
-				ctx.fillStyle = b.color;
-				ctx.font = `${b.size * 2}px system-ui`;
-				ctx.fillText('♥', -b.size / 2, b.size / 2);
+				art.heart(ctx, b.size, b.color);
 			} else if (b.kind === 'star') {
 				ctx.globalAlpha = 1;
 				art.star(ctx, b.size, b.color);
@@ -546,6 +592,18 @@ export class Game {
 		ctx.textBaseline = 'middle';
 		ctx.fillText(String(this.player.stars), 30, 3);
 		ctx.restore();
+
+		if (this.mode === 'hard')
+			for (let i = 0; i < HEARTS; i++) {
+				const full = i < this.hearts;
+				// The heart just lost shakes.
+				const shake = !full && i === this.hearts && this.hurt ? Math.sin(this.t * 60) * 4 : 0;
+				ctx.save();
+				ctx.translate(this.w - 106 - (HEARTS - 1 - i) * 40 + shake, 38);
+				ctx.globalAlpha = full ? 1 : 0.3;
+				art.heart(ctx, 15, full ? '#ff4d6d' : '#fff');
+				ctx.restore();
+			}
 
 		// One dot per creature in the level, filled in as they become friends.
 		const r = Math.min(9, (w * 0.4) / this.total / 2.6);

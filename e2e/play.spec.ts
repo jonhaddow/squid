@@ -20,6 +20,7 @@ test('the first creature waits to be taught, then a drawn zap makes it a friend'
 }) => {
 	await page.goto('/');
 	await page.getByLabel('Play as the purple squid').click();
+	await page.getByRole('button', { name: 'Easy' }).click();
 	await expect.poll(async () => (await state(page)).teaching, { timeout: 15_000 }).toBe('zigzag');
 
 	await draw(page, 'circle'); // the wrong shape fizzles
@@ -33,6 +34,41 @@ test('the first creature waits to be taught, then a drawn zap makes it a friend'
 	// Progress is saved: back home, the star shows on the squid.
 	await page.getByLabel('Home').click();
 	await expect(page.getByLabel('1 stars')).toBeVisible();
+});
+
+test('easy mode teaches a square for the jellyfish, not a swirl', async ({ page }) => {
+	await page.clock.install();
+	await page.goto('/');
+	await page.getByLabel('Play as the purple squid').click();
+	await page.getByRole('button', { name: 'Easy' }).click();
+	await page.clock.runFor(8000);
+	expect((await state(page)).teaching).toBe('zigzag');
+	await draw(page, 'zigzag');
+	await page.clock.runFor(10_000);
+	expect((await state(page)).teaching).toBe('square');
+	await draw(page, 'square');
+	await page.clock.runFor(1000);
+	expect((await state(page)).friends).toBe(2);
+});
+
+test('hard mode has 3 hearts and a game over, then a retry', async ({ page }) => {
+	await page.addInitScript(() =>
+		localStorage.setItem(
+			'squid-spells-v1',
+			JSON.stringify([{ learned: ['zigzag', 'swirl', 'circle', 'square'] }])
+		)
+	);
+	await page.clock.install();
+	await page.goto('/');
+	await page.getByLabel('Play as the purple squid').click();
+	await page.getByRole('button', { name: 'Hard' }).click();
+	expect((await state(page)).hearts).toBe(3);
+	// Draw nothing and let the creatures bump the squid.
+	await page.clock.runFor(90_000);
+	expect(await state(page)).toMatchObject({ hearts: 0, over: true });
+	await expect(page.getByText('Oh no!')).toBeVisible();
+	await page.getByLabel('Try again').click();
+	expect(await state(page)).toMatchObject({ hearts: 3, over: false });
 });
 
 test('asks to turn the phone sideways in portrait', async ({ page }) => {
