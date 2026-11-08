@@ -108,10 +108,17 @@ test('the dressing room changes the colour and outfit, and remembers them', asyn
 	await page.getByLabel('Colour 4').click();
 	await page.getByLabel('shades').click();
 	await page.getByLabel('bowtie').click();
+	await page.getByLabel('Name').fill('Inky');
 	// Hats have to be won first.
 	await expect(page.getByLabel('Hat to win').first()).toBeDisabled();
 	await page.getByLabel('Done').click();
 	await page.reload();
+	await expect(page.getByText('Inky')).toBeVisible();
 	const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('squid-spells-v1')!)[0]);
-	expect(saved).toMatchObject({ color: '#3d8bff', face: 'shades', neck: 'bowtie' });
+	expect(saved).toMatchObject({
+		name: 'Inky',
+		color: '#3d8bff',
+		face: 'shades',
+		neck: 'bowtie'
+	});
 });

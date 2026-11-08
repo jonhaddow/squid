@@ -11,6 +11,8 @@ export const FACES = ['glasses', 'shades', 'hearts', 'monocle'] as const;
 export type Face = (typeof FACES)[number];
 
 export type Player = {
+	/** The squid's name, typed in the dressing room ('' for none yet). */
+	name: string;
 	/** Body colour of their squid. */
 	color: string;
 	/** The wave they're on in easy mode, from 1 (saved as `level` from before waves). Hard mode starts at 1 each game. */
@@ -22,8 +24,6 @@ export type Player = {
 	face: Face | null;
 	/** Shapes they've cast once: the ghost finger stops showing these. */
 	learned: Shape[];
-	/** Auto difficulty: below 1 creatures swim slower, above 1 faster. */
-	ease: number;
 };
 
 /** The colours to choose from in the dressing room. */
@@ -43,9 +43,12 @@ export const COLORS = PALETTE.slice(0, 2);
 export type Look = Pick<Player, 'color' | 'hat' | 'neck' | 'face'>;
 
 const KEY = 'squid-spells-v1';
+/** Long enough for any kid's name, short enough to fit under the squid. */
+export const NAME_MAX = 12;
 
 export function newPlayer(color: string): Player {
 	return {
+		name: '',
 		color,
 		level: 1,
 		stars: 0,
@@ -53,8 +56,7 @@ export function newPlayer(color: string): Player {
 		hat: null,
 		neck: null,
 		face: null,
-		learned: [],
-		ease: 1
+		learned: []
 	};
 }
 
@@ -69,6 +71,7 @@ export function loadPlayers(store: Store): Player[] {
 			const player = { ...p, ...saved[i] };
 			// Only colours from the palette: the drawing code needs a #rrggbb.
 			if (!PALETTE.includes(player.color)) player.color = p.color;
+			player.name = typeof player.name === 'string' ? player.name.slice(0, NAME_MAX) : '';
 			return player;
 		});
 	} catch {
@@ -84,29 +87,22 @@ export function savePlayers(store: Store, players: Player[]) {
 	}
 }
 
-/** After each wave: the next hat (worn straight away), and easy mode remembers the wave. */
+/** After each wave: the next hat to choose in the dressing room (what they're wearing stays), and easy mode remembers the wave. */
 export function finishWave(player: Player, mode: Mode): Hat | null {
 	const hat = HATS.find((h) => !player.hats.includes(h)) ?? null;
-	if (hat) {
-		player.hats.push(hat);
-		player.hat = hat;
-	}
+	if (hat) player.hats.push(hat);
 	if (mode === 'easy') player.level++;
 	return hat;
 }
 
-// Auto difficulty: a miss (a fizzled spell, or a creature bumping the squid)
-// slows things down a lot; each friend made speeds them up a little.
-export const missed = (ease: number) => Math.max(0.5, +(ease - 0.1).toFixed(2));
-export const befriended = (ease: number) => Math.min(1.4, +(ease + 0.03).toFixed(2));
-
 // Both modes are endless: creatures keep coming in waves of WAVE friends.
-// Each wave is a bit faster and busier, up to TOP_WAVE, then stays there.
+// Easy mode stays as it starts: one speed, one creature at a time. In hard
+// mode each wave is faster and busier, up to TOP_WAVE, then stays there.
 export const WAVE = 10;
 export const TOP_WAVE = 7;
 
 export type Plan = {
-	/** Speed relative to wave 1. */
+	/** Speed relative to easy mode. */
 	speed: number;
 	/** Seconds between arrivals. */
 	gap: number;
@@ -114,15 +110,16 @@ export type Plan = {
 	crowd: number;
 };
 
-/** Hard mode doesn't adjust to misses: it's this much faster than easy, always. */
-export const HARD_EASE = 1.3;
+/** Hard mode's creatures start this much faster than easy mode's. */
+export const HARD_SPEED = 1.3;
 
 export function planWave(wave: number, mode: Mode): Plan {
+	if (mode === 'easy') return { speed: 1, gap: 4.6, crowd: 1 };
 	const w = Math.min(wave, TOP_WAVE);
 	return {
-		speed: 1 + (w - 1) * 0.12,
+		speed: HARD_SPEED * (1 + (w - 1) * 0.12),
 		gap: Math.max(1.5, 5 - w * 0.4),
-		crowd: Math.min(4, 1 + Math.floor(w / 2) + (mode === 'hard' ? 1 : 0))
+		crowd: Math.min(4, 2 + Math.floor(w / 2))
 	};
 }
 

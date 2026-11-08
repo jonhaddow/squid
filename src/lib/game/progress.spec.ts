@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-	befriended,
 	finishWave,
 	firstCreatures,
 	loadPlayers,
-	missed,
 	newPlayer,
 	nextShape,
 	planWave,
@@ -24,7 +22,7 @@ describe('players', () => {
 	it('fills in new fields for older saves', () => {
 		const store = memory();
 		store.setItem('squid-spells-v1', JSON.stringify([{ level: 3, stars: 9 }]));
-		expect(loadPlayers(store)[0]).toMatchObject({ level: 3, stars: 9, ease: 1, hats: [] });
+		expect(loadPlayers(store)[0]).toMatchObject({ level: 3, stars: 9, name: '', hats: [] });
 	});
 
 	it('starts with two fresh squids and saves them', () => {
@@ -42,13 +40,23 @@ describe('players', () => {
 		expect(loadPlayers(store)[0].level).toBe(1);
 	});
 
-	it('gives a new hat each wave and wears it', () => {
+	it('unlocks a new hat each wave without changing what they wear', () => {
 		const p = newPlayer('#fff');
+		p.hat = null;
 		expect(finishWave(p, 'easy')).toBe('wizard');
 		expect(finishWave(p, 'hard')).toBe('crown');
 		// Only easy mode remembers the wave: hard mode starts again each game.
-		expect(p).toMatchObject({ level: 2, hats: ['wizard', 'crown'], hat: 'crown' });
+		expect(p).toMatchObject({ level: 2, hats: ['wizard', 'crown'], hat: null });
 	});
+
+	it('keeps a name, trimmed to fit', () => {
+		const store = memory();
+		store.setItem('squid-spells-v1', JSON.stringify([{ name: 7 }, { name: 'Princess Sparkles' }]));
+		const [a, b] = loadPlayers(store);
+		expect(a.name).toBe('');
+		expect(b.name).toBe('Princess Spa');
+	});
+
 	it('keeps a chosen colour and outfit, but not a colour off the palette', () => {
 		const store = memory();
 		const players = loadPlayers(store);
@@ -62,23 +70,22 @@ describe('players', () => {
 });
 
 describe('difficulty', () => {
-	it('eases off on misses and stays in bounds', () => {
-		let ease = 1;
-		for (let i = 0; i < 20; i++) ease = missed(ease);
-		expect(ease).toBe(0.5);
-		for (let i = 0; i < 100; i++) ease = befriended(ease);
-		expect(ease).toBe(1.4);
-	});
-
-	it('teaches each shape first on wave 1, then gets faster and busier, to a limit', () => {
+	it('teaches each shape first on wave 1', () => {
 		expect(firstCreatures(1, 'easy')).toEqual(['zigzag', 'square', 'circle']);
 		expect(firstCreatures(2, 'easy')).toEqual([]);
-		const one = planWave(1, 'easy');
-		expect(one).toMatchObject({ speed: 1, crowd: 1 });
-		const five = planWave(5, 'easy');
+	});
+
+	it('keeps easy mode the same every wave', () => {
+		expect(planWave(1, 'easy')).toEqual({ speed: 1, gap: 4.6, crowd: 1 });
+		expect(planWave(50, 'easy')).toEqual(planWave(1, 'easy'));
+	});
+
+	it('makes hard mode faster and busier each wave, to a limit', () => {
+		const one = planWave(1, 'hard');
+		const five = planWave(5, 'hard');
+		expect(one.speed).toBeGreaterThan(1);
 		expect(five.speed).toBeGreaterThan(one.speed);
 		expect(five.crowd).toBeGreaterThan(one.crowd);
-		expect(planWave(TOP_WAVE + 1, 'easy').speed).toBe(planWave(TOP_WAVE, 'easy').speed);
 		expect(planWave(100, 'hard')).toEqual(planWave(TOP_WAVE, 'hard'));
 	});
 
