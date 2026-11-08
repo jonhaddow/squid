@@ -67,7 +67,7 @@ function cheeks(ctx: Ctx, gap: number, y: number, r: number) {
 }
 
 /** A squid at time t (seconds), which sets its wiggle and blinks. */
-export function drawSquid(ctx: Ctx, s: number, look: Look, t: number, wand = true) {
+export function drawSquid(ctx: Ctx, s: number, look: Look, t: number) {
 	const { color, hat, neck, face } = look;
 	const dark = shade(color, -0.35);
 	// Tentacles, waving.
@@ -132,28 +132,27 @@ export function drawSquid(ctx: Ctx, s: number, look: Look, t: number, wand = tru
 	if (face) drawFace(ctx, s, face);
 	if (neck) drawNeck(ctx, s, neck);
 
-	if (wand) {
-		const tip = { x: s * 0.62, y: -s * 0.12 };
-		ctx.strokeStyle = '#6b3f1d';
-		ctx.lineWidth = s * 0.04;
-		ctx.beginPath();
-		ctx.moveTo(s * 0.32, s * 0.22);
-		ctx.lineTo(tip.x, tip.y);
-		ctx.stroke();
-		ctx.strokeStyle = color;
-		ctx.lineWidth = s * 0.07;
-		ctx.beginPath();
-		ctx.moveTo(s * 0.2, s * 0.1);
-		ctx.quadraticCurveTo(s * 0.32, s * 0.32, s * 0.4, s * 0.15);
-		ctx.stroke();
-		ctx.save();
-		ctx.translate(tip.x, tip.y);
-		ctx.rotate(t * 2);
-		ctx.shadowColor = '#ffe066';
-		ctx.shadowBlur = s * 0.15;
-		star(ctx, s * 0.08, '#ffe066');
-		ctx.restore();
-	}
+	// The wand.
+	const tip = wandTip(s);
+	ctx.strokeStyle = '#6b3f1d';
+	ctx.lineWidth = s * 0.04;
+	ctx.beginPath();
+	ctx.moveTo(s * 0.32, s * 0.22);
+	ctx.lineTo(tip.x, tip.y);
+	ctx.stroke();
+	ctx.strokeStyle = color;
+	ctx.lineWidth = s * 0.07;
+	ctx.beginPath();
+	ctx.moveTo(s * 0.2, s * 0.1);
+	ctx.quadraticCurveTo(s * 0.32, s * 0.32, s * 0.4, s * 0.15);
+	ctx.stroke();
+	ctx.save();
+	ctx.translate(tip.x, tip.y);
+	ctx.rotate(t * 2);
+	ctx.shadowColor = '#ffe066';
+	ctx.shadowBlur = s * 0.15;
+	star(ctx, s * 0.08, '#ffe066');
+	ctx.restore();
 	if (hat) {
 		ctx.save();
 		ctx.translate(0, -s * 0.74);

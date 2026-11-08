@@ -28,8 +28,6 @@ export type Player = {
 	ease: number;
 };
 
-/** Each squid's colour to start with. */
-export const COLORS = ['#b45cff', '#ff7a3d'];
 /** The colours to choose from in the dressing room. */
 export const PALETTE = [
 	'#b45cff',
@@ -41,6 +39,8 @@ export const PALETTE = [
 	'#ff4d4d',
 	'#8a8fa8'
 ];
+/** Each squid's colour to start with. */
+export const COLORS = PALETTE.slice(0, 2);
 /** How a squid looks: what the drawing needs. */
 export type Look = Pick<Player, 'color' | 'hat' | 'neck' | 'face'>;
 

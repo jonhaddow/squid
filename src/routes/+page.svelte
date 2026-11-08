@@ -6,11 +6,14 @@
 	import { unlock, sounds } from '#lib/game/audio.ts';
 	import { Game, HEARTS } from '#lib/game/game.ts';
 	import type { Mode } from '#lib/game/gestures.ts';
+	import type { Thing } from '#lib/game/sprites.ts';
 	import {
+		COLORS,
 		FACES,
 		HATS,
 		loadPlayers,
 		NECKS,
+		newPlayer,
 		PALETTE,
 		savePlayers,
 		type Hat,
@@ -87,6 +90,13 @@
 		if (updated && playing === null && chosen === null && dressing === null) location.reload();
 	});
 
+	/** The dressing room's rows of things to wear, after the colours. */
+	const RAILS = [
+		{ kind: 'hat', label: 'Hat', items: HATS, none: 'No hat' },
+		{ kind: 'neck', label: 'Neck', items: NECKS, none: 'Nothing round the neck' },
+		{ kind: 'face', label: 'Glasses', items: FACES, none: 'No glasses' }
+	] as const;
+
 	const HEART =
 		'M12 21C5 15.5 2 12.3 2 8.5A4.8 4.8 0 0 1 12 6a4.8 4.8 0 0 1 10 2.5c0 3.8-3 7-10 12.5z';
 
@@ -112,9 +122,10 @@
 		dressing = i;
 	}
 
-	function wear(player: Player, change: Partial<Look>) {
+	function wear(change: Partial<Look>) {
+		if (dressing === null) return;
 		sounds.pop();
-		Object.assign(player, change);
+		Object.assign(players[dressing], change);
 		save();
 	}
 
@@ -203,74 +214,36 @@
 							style:--c={color}
 							aria-label="Colour {n + 1}"
 							aria-pressed={player.color === color}
-							onclick={() => wear(player, { color })}
+							onclick={() => wear({ color })}
 						></button>
 					{/each}
 				</div>
-				<div class="rail" role="group" aria-label="Hat">
-					<button
-						class="tile"
-						class:on={!player.hat}
-						aria-label="No hat"
-						aria-pressed={!player.hat}
-						onclick={() => wear(player, { hat: null })}>{@render none()}</button
-					>
-					{#each HATS as hat (hat)}
-						{@const won = player.hats.includes(hat)}
-						<!-- Hats are won, one a level: the rest show as shadows to play for. -->
+				{#each RAILS as rail (rail.kind)}
+					<div class="rail" role="group" aria-label={rail.label}>
 						<button
 							class="tile"
-							class:on={player.hat === hat}
-							class:locked={!won}
-							disabled={!won}
-							aria-label={won ? `${hat} hat` : 'Hat to win'}
-							aria-pressed={player.hat === hat}
-							onclick={() => wear(player, { hat })}
+							class:on={!player[rail.kind]}
+							aria-label={rail.none}
+							aria-pressed={!player[rail.kind]}
+							onclick={() => wear({ [rail.kind]: null })}>{@render none()}</button
 						>
-							<ThingIcon thing={{ kind: 'hat', item: hat }} />
-						</button>
-					{/each}
-				</div>
-				<div class="rail" role="group" aria-label="Neck">
-					<button
-						class="tile"
-						class:on={!player.neck}
-						aria-label="Nothing round the neck"
-						aria-pressed={!player.neck}
-						onclick={() => wear(player, { neck: null })}>{@render none()}</button
-					>
-					{#each NECKS as neck (neck)}
-						<button
-							class="tile"
-							class:on={player.neck === neck}
-							aria-label={neck}
-							aria-pressed={player.neck === neck}
-							onclick={() => wear(player, { neck })}
-						>
-							<ThingIcon thing={{ kind: 'neck', item: neck }} />
-						</button>
-					{/each}
-				</div>
-				<div class="rail" role="group" aria-label="Glasses">
-					<button
-						class="tile"
-						class:on={!player.face}
-						aria-label="No glasses"
-						aria-pressed={!player.face}
-						onclick={() => wear(player, { face: null })}>{@render none()}</button
-					>
-					{#each FACES as face (face)}
-						<button
-							class="tile"
-							class:on={player.face === face}
-							aria-label={face}
-							aria-pressed={player.face === face}
-							onclick={() => wear(player, { face })}
-						>
-							<ThingIcon thing={{ kind: 'face', item: face }} />
-						</button>
-					{/each}
-				</div>
+						{#each rail.items as item (item)}
+							<!-- Hats are won, one a level: the rest show as shadows to play for. -->
+							{@const locked = rail.kind === 'hat' && !player.hats.includes(item as Hat)}
+							<button
+								class="tile"
+								class:on={player[rail.kind] === item}
+								class:locked
+								disabled={locked}
+								aria-label={locked ? 'Hat to win' : item}
+								aria-pressed={player[rail.kind] === item}
+								onclick={() => wear({ [rail.kind]: item })}
+							>
+								<ThingIcon thing={{ kind: rail.kind, item } as Thing} />
+							</button>
+						{/each}
+					</div>
+				{/each}
 			</div>
 			<button class="back" onclick={() => (dressing = null)} aria-label="Done">
 				<svg viewBox="0 0 24 24" aria-hidden="true"
@@ -394,12 +367,7 @@
 				<!-- Only while it shows: its animation would cost frames during play. -->
 				{#if portrait}
 					<SquidPreview
-						look={players[playing ?? dressing ?? 0] ?? {
-							color: '#b45cff',
-							hat: null,
-							neck: null,
-							face: null
-						}}
+						look={players[playing ?? dressing ?? 0] ?? newPlayer(COLORS[0])}
 						size={96}
 					/>
 				{/if}
