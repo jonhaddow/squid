@@ -1,7 +1,7 @@
 // Everything is drawn with canvas paths: no images to load, crisp at any size.
 // Each sprite is drawn centred on (0, 0) at a size `s`; callers translate.
 import { guide, type Shape } from './gestures.ts';
-import type { Hat } from './progress.ts';
+import type { Face, Hat, Look, Neck } from './progress.ts';
 
 type Ctx = CanvasRenderingContext2D;
 const TAU = Math.PI * 2;
@@ -66,9 +66,9 @@ function cheeks(ctx: Ctx, gap: number, y: number, r: number) {
 	ctx.globalAlpha /= 0.5;
 }
 
-export type SquidLook = { color: string; hat: Hat | null; t: number; wand?: boolean };
-
-export function drawSquid(ctx: Ctx, s: number, { color, hat, t, wand = true }: SquidLook) {
+/** A squid at time t (seconds), which sets its wiggle and blinks. */
+export function drawSquid(ctx: Ctx, s: number, look: Look, t: number, wand = true) {
+	const { color, hat, neck, face } = look;
 	const dark = shade(color, -0.35);
 	// Tentacles, waving.
 	ctx.lineCap = 'round';
@@ -129,6 +129,8 @@ export function drawSquid(ctx: Ctx, s: number, { color, hat, t, wand = true }: S
 	} else eyes(ctx, s, s * 0.13, -s * 0.06, s * 0.1, 1);
 	cheeks(ctx, s * 0.21, s * 0.06, s * 0.04);
 	mouth(ctx, s, s * 0.08, true);
+	if (face) drawFace(ctx, s, face);
+	if (neck) drawNeck(ctx, s, neck);
 
 	if (wand) {
 		const tip = { x: s * 0.62, y: -s * 0.12 };
@@ -258,6 +260,156 @@ export function drawHat(ctx: Ctx, s: number, hat: Hat) {
 		}
 		circle(ctx, 0, -s * 0.06, s * 0.05, '#ffc93c');
 	}
+}
+
+/** A point on the curve along the bottom of the squid's mantle, u from 0 to 1. */
+function collar(s: number, u: number) {
+	const v = 1 - u;
+	return { x: (u - v) * s * 0.27, y: (v * v + u * u) * s * 0.1 + 2 * u * v * s * 0.26 };
+}
+
+function collarPath(ctx: Ctx, s: number) {
+	ctx.beginPath();
+	ctx.moveTo(-s * 0.27, s * 0.1);
+	ctx.quadraticCurveTo(0, s * 0.26, s * 0.27, s * 0.1);
+}
+
+/** Round the bottom of the squid's mantle, drawn on a squid centred at (0, 0). */
+export function drawNeck(ctx: Ctx, s: number, neck: Neck) {
+	ctx.lineJoin = 'round';
+	ctx.lineCap = 'round';
+	if (neck === 'pearls') {
+		for (let i = 0; i <= 8; i++) {
+			const { x, y } = collar(s, i / 8);
+			circle(ctx, x, y, s * 0.032, '#fff4f8');
+			circle(ctx, x - s * 0.01, y - s * 0.01, s * 0.01, '#fff');
+		}
+	} else if (neck === 'bowtie') {
+		ctx.fillStyle = '#e63946';
+		for (const side of [-1, 1]) {
+			ctx.beginPath();
+			ctx.moveTo(0, s * 0.18);
+			ctx.lineTo(side * s * 0.13, s * 0.11);
+			ctx.lineTo(side * s * 0.13, s * 0.25);
+			ctx.closePath();
+			ctx.fill();
+		}
+		circle(ctx, 0, s * 0.18, s * 0.035, '#b5202d');
+	} else if (neck === 'scarf') {
+		collarPath(ctx, s);
+		ctx.strokeStyle = '#2ed8a3';
+		ctx.lineWidth = s * 0.08;
+		ctx.stroke();
+		ctx.strokeStyle = '#fff';
+		ctx.lineWidth = s * 0.02;
+		ctx.setLineDash([s * 0.04, s * 0.06]);
+		ctx.stroke();
+		ctx.setLineDash([]);
+		// The end hanging down, over the tentacles.
+		ctx.beginPath();
+		ctx.moveTo(-s * 0.16, s * 0.15);
+		ctx.lineTo(-s * 0.22, s * 0.42);
+		ctx.lineTo(-s * 0.12, s * 0.42);
+		ctx.lineTo(-s * 0.08, s * 0.17);
+		ctx.closePath();
+		ctx.fillStyle = '#2ed8a3';
+		ctx.fill();
+		ctx.fillStyle = '#fff';
+		ctx.fillRect(-s * 0.21, s * 0.33, s * 0.095, s * 0.025);
+	} else {
+		ctx.strokeStyle = '#3d8bff';
+		ctx.lineWidth = s * 0.04;
+		ctx.beginPath();
+		ctx.moveTo(-s * 0.2, s * 0.13);
+		ctx.lineTo(0, s * 0.24);
+		ctx.lineTo(s * 0.2, s * 0.13);
+		ctx.stroke();
+		circle(ctx, 0, s * 0.28, s * 0.07, '#ffc93c');
+		ctx.save();
+		ctx.translate(0, s * 0.28);
+		star(ctx, s * 0.045, '#c98a00');
+		ctx.restore();
+	}
+}
+
+/** Over the squid's eyes, on a squid centred at (0, 0). */
+export function drawFace(ctx: Ctx, s: number, face: Face) {
+	const gap = s * 0.13;
+	const y = -s * 0.06;
+	ctx.lineCap = 'round';
+	ctx.lineJoin = 'round';
+	ctx.strokeStyle = '#1a1033';
+	ctx.lineWidth = s * 0.03;
+	if (face === 'monocle') {
+		ctx.beginPath();
+		ctx.arc(gap, y, s * 0.13, 0, TAU);
+		ctx.strokeStyle = '#ffc93c';
+		ctx.stroke();
+		ctx.lineWidth = s * 0.012;
+		ctx.beginPath();
+		ctx.moveTo(gap + s * 0.09, y + s * 0.09);
+		ctx.quadraticCurveTo(s * 0.26, s * 0.12, s * 0.2, s * 0.2);
+		ctx.stroke();
+		return;
+	}
+	// The bridge and the arms.
+	ctx.beginPath();
+	ctx.moveTo(-gap + s * 0.12, y - s * 0.01);
+	ctx.quadraticCurveTo(0, y - s * 0.05, gap - s * 0.12, y - s * 0.01);
+	ctx.moveTo(-gap - s * 0.12, y - s * 0.02);
+	ctx.lineTo(-s * 0.3, y - s * 0.05);
+	ctx.moveTo(gap + s * 0.12, y - s * 0.02);
+	ctx.lineTo(s * 0.3, y - s * 0.05);
+	if (face === 'hearts') ctx.strokeStyle = '#ff5fa2';
+	ctx.stroke();
+	for (const side of [-1, 1]) {
+		const x = side * gap;
+		if (face === 'glasses') {
+			ctx.beginPath();
+			ctx.arc(x, y, s * 0.12, 0, TAU);
+			ctx.globalAlpha *= 0.2;
+			ctx.fillStyle = '#bff3ff';
+			ctx.fill();
+			ctx.globalAlpha /= 0.2;
+			ctx.stroke();
+		} else if (face === 'shades') {
+			ctx.beginPath();
+			ctx.ellipse(x, y, s * 0.13, s * 0.1, 0, 0, TAU);
+			ctx.fillStyle = '#1a1033';
+			ctx.fill();
+			ctx.beginPath();
+			ctx.moveTo(x - s * 0.07, y - s * 0.03);
+			ctx.lineTo(x - s * 0.02, y - s * 0.06);
+			ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+			ctx.stroke();
+			ctx.strokeStyle = '#1a1033';
+		} else {
+			ctx.save();
+			ctx.translate(x, y);
+			ctx.globalAlpha *= 0.75;
+			heart(ctx, s * 0.12, '#ff5fa2');
+			ctx.restore();
+		}
+	}
+}
+
+export type Thing =
+	{ kind: 'hat'; item: Hat } | { kind: 'neck'; item: Neck } | { kind: 'face'; item: Face };
+
+/** One dress-up item on its own, roughly centred on (0, 0): for the buttons. */
+export function drawThing(ctx: Ctx, s: number, thing: Thing) {
+	ctx.save();
+	if (thing.kind === 'hat') {
+		ctx.translate(0, s * 0.22);
+		drawHat(ctx, s, thing.item);
+	} else if (thing.kind === 'neck') {
+		ctx.translate(0, thing.item === 'scarf' ? -s * 0.26 : -s * 0.2);
+		drawNeck(ctx, s, thing.item);
+	} else {
+		ctx.translate(0, s * 0.06);
+		drawFace(ctx, s, thing.item);
+	}
+	ctx.restore();
 }
 
 export type Creature = 'crab' | 'jelly' | 'puffer';

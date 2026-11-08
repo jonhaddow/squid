@@ -2,6 +2,8 @@
 
 A drawing-spells game for Jon's kids (6 and 8), at https://squid.app.haddow.me. You're a squid wizard under the sea. Grumpy crabs, jellyfish and pufferfish swim at you, each showing a shape. Draw it anywhere to cast the spell (zigzag: zap, circle: shield, and for the jellyfish a square in easy mode or a swirl in hard) and they turn into friends.
 
+Each kid's squid has a dressing room (the T-shirt button): a colour, a hat (one won each level), something round its neck and glasses.
+
 Easy mode has no losing and slows down when they miss. Hard mode is faster, has 3 hearts and a game over, and keeps its own level.
 
 - Install: open it in Safari (or Chrome), then Share → Add to Home Screen.
