@@ -252,13 +252,75 @@ export function drawHat(ctx: Ctx, s: number, hat: Hat) {
 		ctx.fillRect(-s * 0.24, -s * 0.03, s * 0.48, s * 0.05);
 		ctx.fillStyle = '#e63946';
 		ctx.fillRect(-s * 0.14, -s * 0.1, s * 0.28, s * 0.05);
-	} else {
-		for (let i = 0; i < 5; i++) {
-			const a = (i / 5) * TAU;
-			circle(ctx, Math.cos(a) * s * 0.07, -s * 0.06 + Math.sin(a) * s * 0.07, s * 0.06, '#ffd1e8');
+	} else if (hat === 'chef') {
+		circle(ctx, -s * 0.12, -s * 0.2, s * 0.1, '#f4f4fb');
+		circle(ctx, s * 0.12, -s * 0.2, s * 0.1, '#f4f4fb');
+		circle(ctx, 0, -s * 0.26, s * 0.13, '#fff');
+		ctx.fillStyle = '#e6e6f2';
+		ctx.fillRect(-s * 0.17, -s * 0.14, s * 0.34, s * 0.16);
+	} else if (hat === 'cowboy') {
+		ctx.beginPath();
+		ctx.moveTo(-s * 0.15, -s * 0.02);
+		ctx.quadraticCurveTo(-s * 0.18, -s * 0.24, -s * 0.07, -s * 0.24);
+		ctx.quadraticCurveTo(0, -s * 0.18, s * 0.07, -s * 0.24);
+		ctx.quadraticCurveTo(s * 0.18, -s * 0.24, s * 0.15, -s * 0.02);
+		ctx.closePath();
+		ctx.fillStyle = '#b5743a';
+		ctx.fill();
+		ctx.fillStyle = '#6b3f1d';
+		ctx.fillRect(-s * 0.155, -s * 0.07, s * 0.31, s * 0.04);
+		ctx.beginPath();
+		ctx.moveTo(-s * 0.36, -s * 0.08);
+		ctx.quadraticCurveTo(-s * 0.3, s * 0.04, 0, s * 0.03);
+		ctx.quadraticCurveTo(s * 0.3, s * 0.04, s * 0.36, -s * 0.08);
+		ctx.quadraticCurveTo(s * 0.2, -s * 0.01, 0, -s * 0.02);
+		ctx.quadraticCurveTo(-s * 0.2, -s * 0.01, -s * 0.36, -s * 0.08);
+		ctx.fillStyle = '#9a5f2c';
+		ctx.fill();
+	} else if (hat === 'viking') {
+		ctx.fillStyle = '#fff1d6';
+		for (const side of [-1, 1]) {
+			ctx.beginPath();
+			ctx.moveTo(side * s * 0.15, -s * 0.06);
+			ctx.quadraticCurveTo(side * s * 0.32, -s * 0.08, side * s * 0.3, -s * 0.3);
+			ctx.quadraticCurveTo(side * s * 0.24, -s * 0.14, side * s * 0.12, -s * 0.15);
+			ctx.closePath();
+			ctx.fill();
 		}
-		circle(ctx, 0, -s * 0.06, s * 0.05, '#ffc93c');
+		ctx.beginPath();
+		ctx.arc(0, 0, s * 0.18, Math.PI, TAU);
+		ctx.closePath();
+		ctx.fillStyle = '#a7b0c8';
+		ctx.fill();
+		ctx.fillStyle = '#ffc93c';
+		ctx.fillRect(-s * 0.19, -s * 0.03, s * 0.38, s * 0.05);
+		ctx.fillRect(-s * 0.02, -s * 0.18, s * 0.04, s * 0.16);
+	} else if (hat === 'beanie') {
+		ctx.beginPath();
+		ctx.arc(0, 0, s * 0.19, Math.PI, TAU);
+		ctx.closePath();
+		ctx.fillStyle = '#3d8bff';
+		ctx.fill();
+		ctx.save();
+		ctx.clip();
+		ctx.fillStyle = '#ffe066';
+		ctx.fillRect(-s * 0.2, -s * 0.13, s * 0.4, s * 0.04);
+		ctx.restore();
+		ctx.fillStyle = '#2a6ad9';
+		ctx.fillRect(-s * 0.2, -s * 0.05, s * 0.4, s * 0.07);
+		circle(ctx, 0, -s * 0.21, s * 0.05, '#ff5fa2');
+	} else {
+		flower(ctx, 0, -s * 0.06, s * 0.07, s * 0.06, '#ffd1e8');
 	}
+}
+
+/** Five petals round a yellow middle. */
+function flower(ctx: Ctx, x: number, y: number, ring: number, petal: number, color: string) {
+	for (let i = 0; i < 5; i++) {
+		const a = (i / 5) * TAU;
+		circle(ctx, x + Math.cos(a) * ring, y + Math.sin(a) * ring, petal, color);
+	}
+	circle(ctx, x, y, petal * 0.85, '#ffc93c');
 }
 
 /** A point on the curve along the bottom of the squid's mantle, u from 0 to 1. */
@@ -272,6 +334,8 @@ function collarPath(ctx: Ctx, s: number) {
 	ctx.moveTo(-s * 0.27, s * 0.1);
 	ctx.quadraticCurveTo(0, s * 0.26, s * 0.27, s * 0.1);
 }
+
+const LEI = ['#ff5fa2', '#ff7a3d', '#fff'];
 
 /** Round the bottom of the squid's mantle, drawn on a squid centred at (0, 0). */
 export function drawNeck(ctx: Ctx, s: number, neck: Neck) {
@@ -315,6 +379,32 @@ export function drawNeck(ctx: Ctx, s: number, neck: Neck) {
 		ctx.fill();
 		ctx.fillStyle = '#fff';
 		ctx.fillRect(-s * 0.21, s * 0.33, s * 0.095, s * 0.025);
+	} else if (neck === 'lei') {
+		for (let i = 0; i <= 6; i++) {
+			const { x, y } = collar(s, i / 6);
+			flower(ctx, x, y, s * 0.025, s * 0.025, LEI[i % 3]);
+		}
+	} else if (neck === 'tie') {
+		ctx.fillStyle = '#3d8bff';
+		ctx.beginPath();
+		ctx.moveTo(-s * 0.035, s * 0.2);
+		ctx.lineTo(-s * 0.06, s * 0.42);
+		ctx.lineTo(0, s * 0.48);
+		ctx.lineTo(s * 0.06, s * 0.42);
+		ctx.lineTo(s * 0.035, s * 0.2);
+		ctx.closePath();
+		ctx.fill();
+		ctx.fillStyle = '#ffe066';
+		ctx.fillRect(-s * 0.045, s * 0.28, s * 0.09, s * 0.025);
+		ctx.fillRect(-s * 0.055, s * 0.36, s * 0.11, s * 0.025);
+		ctx.beginPath();
+		ctx.moveTo(-s * 0.06, s * 0.15);
+		ctx.lineTo(s * 0.06, s * 0.15);
+		ctx.lineTo(s * 0.035, s * 0.22);
+		ctx.lineTo(-s * 0.035, s * 0.22);
+		ctx.closePath();
+		ctx.fillStyle = '#2a6ad9';
+		ctx.fill();
 	} else {
 		ctx.strokeStyle = '#3d8bff';
 		ctx.lineWidth = s * 0.04;
@@ -351,6 +441,43 @@ export function drawFace(ctx: Ctx, s: number, face: Face) {
 		ctx.stroke();
 		return;
 	}
+	if (face === 'tash') {
+		ctx.fillStyle = '#5a3418';
+		for (const side of [-1, 1]) {
+			ctx.beginPath();
+			ctx.moveTo(0, s * 0.045);
+			ctx.quadraticCurveTo(side * s * 0.08, s * 0.0, side * s * 0.16, s * 0.05);
+			ctx.quadraticCurveTo(side * s * 0.19, s * 0.02, side * s * 0.17, s * 0.0);
+			ctx.quadraticCurveTo(side * s * 0.21, s * 0.04, side * s * 0.15, s * 0.08);
+			ctx.quadraticCurveTo(side * s * 0.07, s * 0.09, 0, s * 0.07);
+			ctx.fill();
+		}
+		return;
+	}
+	if (face === 'goggles') {
+		ctx.strokeStyle = '#ff7a3d';
+		ctx.lineWidth = s * 0.05;
+		// The strap, between and either side of the lenses.
+		ctx.beginPath();
+		ctx.moveTo(-s * 0.32, y);
+		ctx.lineTo(-gap - s * 0.1, y);
+		ctx.moveTo(-gap + s * 0.1, y);
+		ctx.lineTo(gap - s * 0.1, y);
+		ctx.moveTo(gap + s * 0.1, y);
+		ctx.lineTo(s * 0.32, y);
+		ctx.stroke();
+		ctx.lineWidth = s * 0.035;
+		for (const side of [-1, 1]) {
+			ctx.beginPath();
+			ctx.arc(side * gap, y, s * 0.11, 0, TAU);
+			ctx.globalAlpha *= 0.45;
+			ctx.fillStyle = '#7cf0ff';
+			ctx.fill();
+			ctx.globalAlpha /= 0.45;
+			ctx.stroke();
+		}
+		return;
+	}
 	// The bridge and the arms.
 	ctx.beginPath();
 	ctx.moveTo(-gap + s * 0.12, y - s * 0.01);
@@ -360,6 +487,7 @@ export function drawFace(ctx: Ctx, s: number, face: Face) {
 	ctx.moveTo(gap + s * 0.12, y - s * 0.02);
 	ctx.lineTo(s * 0.3, y - s * 0.05);
 	if (face === 'hearts') ctx.strokeStyle = '#ff5fa2';
+	else if (face === 'stars') ctx.strokeStyle = '#c98a00';
 	ctx.stroke();
 	for (const side of [-1, 1]) {
 		const x = side * gap;
@@ -386,7 +514,8 @@ export function drawFace(ctx: Ctx, s: number, face: Face) {
 			ctx.save();
 			ctx.translate(x, y);
 			ctx.globalAlpha *= 0.75;
-			heart(ctx, s * 0.12, '#ff5fa2');
+			if (face === 'stars') star(ctx, s * 0.15, '#ffc93c');
+			else heart(ctx, s * 0.12, '#ff5fa2');
 			ctx.restore();
 		}
 	}
@@ -402,7 +531,7 @@ export function drawThing(ctx: Ctx, s: number, thing: Thing) {
 		ctx.translate(0, s * 0.22);
 		drawHat(ctx, s, thing.item);
 	} else if (thing.kind === 'neck') {
-		ctx.translate(0, thing.item === 'scarf' ? -s * 0.26 : -s * 0.2);
+		ctx.translate(0, thing.item === 'scarf' || thing.item === 'tie' ? -s * 0.3 : -s * 0.2);
 		drawNeck(ctx, s, thing.item);
 	} else {
 		ctx.translate(0, s * 0.06);
