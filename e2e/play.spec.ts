@@ -184,8 +184,8 @@ test('the dressing room changes the colour and outfit, and remembers them', asyn
 	await page.getByLabel('shades').click();
 	await page.getByLabel('bowtie').click();
 	await page.getByLabel('Name').fill('Inky');
-	// Hats have to be won first.
-	await expect(page.getByLabel('Hat to win').first()).toBeDisabled();
+	// Prizes have to be won first.
+	await expect(page.getByLabel('Prize to win').first()).toBeDisabled();
 	await page.getByLabel('Done').click();
 	await page.reload();
 	await expect(page.getByText('Inky')).toBeVisible();
