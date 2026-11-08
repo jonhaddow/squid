@@ -73,7 +73,7 @@ describe('players', () => {
 
 describe('difficulty', () => {
 	it('teaches each shape first on wave 1', () => {
-		expect(firstCreatures(1, 'easy')).toEqual(['zigzag', 'square', 'circle', 'triangle']);
+		expect(firstCreatures(1, 'easy')).toEqual(['zigzag', 'square', 'circle', 'triangle', 'arch']);
 		expect(firstCreatures(2, 'easy')).toEqual([]);
 	});
 
@@ -92,7 +92,7 @@ describe('difficulty', () => {
 	});
 
 	it('uses the swirl only in hard mode', () => {
-		expect(firstCreatures(1, 'hard')).toEqual(['zigzag', 'swirl', 'circle', 'triangle']);
+		expect(firstCreatures(1, 'hard')).toEqual(['zigzag', 'swirl', 'circle', 'triangle', 'arch']);
 		const easy = Array.from({ length: 80 }, () => nextShape([], 'easy'));
 		const hard = Array.from({ length: 80 }, () => nextShape([], 'hard'));
 		expect(easy).not.toContain('swirl');
@@ -114,6 +114,6 @@ describe('the kraken', () => {
 			expect(shapes[1]).not.toBe(shapes[2]);
 		}
 		const rolls = [0.99, 0.99, 0, 0.5];
-		expect(bossShapes('hard', () => rolls.shift()!)).toEqual(['triangle', 'zigzag', 'circle']);
+		expect(bossShapes('hard', () => rolls.shift()!)).toEqual(['arch', 'zigzag', 'circle']);
 	});
 });

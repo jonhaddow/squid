@@ -98,7 +98,9 @@ test('wave 3 ends with the kraken: the others swim off and it takes 3 spells', a
 	await page.addInitScript(() =>
 		localStorage.setItem(
 			'squid-spells-v1',
-			JSON.stringify([{ level: 3, learned: ['zigzag', 'square', 'circle', 'triangle', 'swirl'] }])
+			JSON.stringify([
+				{ level: 3, learned: ['zigzag', 'square', 'circle', 'triangle', 'swirl', 'arch'] }
+			])
 		)
 	);
 	await page.clock.install();

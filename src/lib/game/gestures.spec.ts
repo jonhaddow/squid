@@ -27,6 +27,46 @@ describe('classify', () => {
 		expect(classify(draw(guide('zigzag')))).toBe('zigzag');
 		expect(classify(draw(guide('square')))).toBe('square');
 		expect(classify(draw(guide('triangle')))).toBe('triangle');
+		expect(classify(draw(guide('arch')))).toBe('arch');
+	});
+
+	it('accepts wobbly arches, any way up or round, a bit short or long', () => {
+		const half = (from: number, turns: number): Point[] =>
+			Array.from({ length: 40 }, (_, i) => {
+				const a = from + (i / 39) * turns * 2 * Math.PI;
+				return { x: 0.5 + 0.5 * Math.cos(a), y: 0.5 + 0.5 * Math.sin(a) };
+			});
+		for (let seed = 1; seed < 50; seed++) {
+			expect(classify(draw(half(Math.PI, 0.5), 200, 6, seed))).toBe('arch'); // a rainbow
+			expect(classify(draw(half(0, -0.5), 200, 6, seed))).toBe('arch'); // the other way
+			expect(classify(draw(half(0, 0.5), 160, 5, seed))).toBe('arch'); // a bowl
+			expect(classify(draw(half(Math.PI / 2, 0.5), 160, 5, seed))).toBe('arch'); // a C
+			expect(classify(draw(half(Math.PI, 0.4), 200, 4, seed))).toBe('arch');
+			expect(classify(draw(half(Math.PI * 0.95, 0.55), 200, 4, seed))).toBe('arch');
+		}
+	});
+
+	it("doesn't take a V, an L, a line or a nearly closed circle for an arch", () => {
+		const v: Point[] = [
+			{ x: 0, y: 1 },
+			{ x: 0.5, y: 0 },
+			{ x: 1, y: 1 }
+		];
+		const l: Point[] = [
+			{ x: 0, y: 0 },
+			{ x: 0, y: 1 },
+			{ x: 1, y: 1 }
+		];
+		const line: Point[] = [
+			{ x: 0, y: 0 },
+			{ x: 1, y: 0.3 }
+		];
+		for (let seed = 1; seed < 50; seed++) {
+			for (const shape of [v, l, line])
+				expect(classify(draw(shape, 200, 4, seed))).not.toBe('arch');
+			for (const turns of [0.7, 0.75, 0.85])
+				expect(classify(draw(arc(turns), 200, 5, seed))).not.toBe('arch');
+		}
 	});
 
 	it('accepts wobbly triangles, any way round, from any corner or mid-side', () => {
@@ -146,6 +186,8 @@ describe('classify', () => {
 		expect(classify(draw(arc(-1), 150, 8))).toBe('circle');
 		expect(classify(draw(arc(1.3)))).toBe('circle');
 		expect(classify(draw(arc(0.8)))).toBe('circle');
+		expect(classify(draw(arc(0.7)))).toBe('circle');
+		expect(classify(draw(arc(0.75)))).toBe('circle');
 	});
 
 	it('tells a swirl from a circle', () => {
