@@ -411,21 +411,19 @@ export function drawThing(ctx: Ctx, s: number, thing: Thing) {
 	ctx.restore();
 }
 
-export type Creature = 'crab' | 'jelly' | 'puffer' | 'fish' | 'starfish';
+export type Creature = 'crab' | 'jelly' | 'puffer' | 'fish';
 export const CREATURE: Record<Shape, Creature> = {
 	zigzag: 'crab',
 	swirl: 'jelly',
 	square: 'jelly',
 	circle: 'puffer',
-	triangle: 'fish',
-	star: 'starfish'
+	triangle: 'fish'
 };
 
 export function drawCreature(ctx: Ctx, kind: Creature, s: number, t: number, happy: boolean) {
 	if (kind === 'crab') drawCrab(ctx, s, t, happy);
 	else if (kind === 'jelly') drawJelly(ctx, s, t, happy);
 	else if (kind === 'fish') drawFish(ctx, s, t, happy);
-	else if (kind === 'starfish') drawStarfish(ctx, s, t, happy);
 	else drawPuffer(ctx, s, t, happy);
 }
 
@@ -465,34 +463,6 @@ function drawFish(ctx: Ctx, s: number, t: number, happy: boolean) {
 	if (happy) cheeks(ctx, s * 0.1, s * 0.06, s * 0.03);
 	mouth(ctx, s * 0.8, s * 0.08, happy);
 	ctx.restore();
-}
-
-/** A five-armed starfish, turning slowly. */
-function drawStarfish(ctx: Ctx, s: number, t: number, happy: boolean) {
-	ctx.save();
-	ctx.rotate(Math.sin(t * 1.5) * 0.2);
-	ctx.beginPath();
-	for (let i = 0; i < 10; i++) {
-		const a = -Math.PI / 2 + (i * Math.PI) / 5;
-		const r = i % 2 === 0 ? s * 0.38 : s * 0.17;
-		ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-	}
-	ctx.closePath();
-	ctx.fillStyle = '#ff8a5c';
-	ctx.strokeStyle = '#ff8a5c';
-	ctx.lineWidth = s * 0.08;
-	ctx.lineJoin = 'round';
-	ctx.stroke();
-	ctx.fill();
-	for (let i = 0; i < 5; i++) {
-		const a = -Math.PI / 2 + (i * TAU) / 5;
-		for (const f of [0.2, 0.28])
-			circle(ctx, Math.cos(a) * s * f, Math.sin(a) * s * f, s * 0.018, '#ffd0b8');
-	}
-	ctx.restore();
-	eyes(ctx, s, s * 0.07, -s * 0.03, s * 0.06, happy ? 1 : 0, -0.4);
-	if (happy) cheeks(ctx, s * 0.13, s * 0.06, s * 0.03);
-	mouth(ctx, s * 0.8, s * 0.07, happy);
 }
 
 /**

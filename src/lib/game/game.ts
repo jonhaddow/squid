@@ -5,7 +5,7 @@
 // has 3 hearts and a game over, and speeds up and gets busier each wave (to a
 // limit). Both are endless: every WAVE friends wins a hat. A creature the child
 // hasn't cast yet stops, and a finger draws its shape until the child copies it.
-// Every 5th wave ends with the kraken: the other creatures swim off, and it
+// Every 3rd wave ends with the kraken: the other creatures swim off, and it
 // needs 3 spells, a random shape each, to become a friend.
 import { sounds, say, unlock } from './audio.ts';
 import {
@@ -263,7 +263,7 @@ export class Game {
 			sounds.zap();
 			this.flash = 1;
 		} else if (target.shape === 'swirl' || target.shape === 'square') sounds.bubbles();
-		else if (target.shape === 'star') sounds.twinkle();
+		else if (target.shape === 'triangle') sounds.twinkle();
 		else sounds.shield();
 	}
 
@@ -590,17 +590,6 @@ export class Game {
 			}
 			ctx.stroke();
 			ctx.restore();
-		} else if (spell.shape === 'star') {
-			// A shooting star with a trail of little ones.
-			for (let i = 3; i >= 0; i--) {
-				const k = Math.max(0, f - i * 0.08);
-				ctx.save();
-				ctx.translate(from.x + (to.x - from.x) * k, from.y + (to.y - from.y) * k);
-				ctx.rotate(this.t * 8);
-				ctx.globalAlpha = 1 - i * 0.22;
-				art.star(ctx, 22 - i * 4, '#ffe066');
-				ctx.restore();
-			}
 		} else if (spell.shape === 'triangle') {
 			// A spinning fin.
 			ctx.save();
