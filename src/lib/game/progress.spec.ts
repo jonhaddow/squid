@@ -5,7 +5,6 @@ import {
 	loadPlayers,
 	missed,
 	newPlayer,
-	nextHat,
 	planLevel,
 	savePlayers
 } from './progress.ts';
@@ -40,14 +39,22 @@ describe('players', () => {
 		expect(loadPlayers(store)[0].level).toBe(1);
 	});
 
-	it('gives a new hat each level, then cycles through them', () => {
+	it('gives a new hat each level and wears it', () => {
 		const p = newPlayer('#fff');
 		expect(finishLevel(p, 'easy')).toBe('wizard');
 		expect(finishLevel(p, 'hard')).toBe('crown');
-		expect(p).toMatchObject({ level: 2, hardLevel: 2, hat: 'crown' });
-		expect(nextHat(p)).toBeNull();
-		expect(nextHat(p)).toBe('wizard');
-		expect(nextHat(p)).toBe('crown');
+		expect(p).toMatchObject({ level: 2, hardLevel: 2, hats: ['wizard', 'crown'], hat: 'crown' });
+	});
+
+	it('keeps a chosen colour and outfit, but not a colour off the palette', () => {
+		const store = memory();
+		const players = loadPlayers(store);
+		Object.assign(players[0], { color: '#2ed8a3', neck: 'bowtie', face: 'shades' });
+		players[1].color = 'red';
+		savePlayers(store, players);
+		const [a, b] = loadPlayers(store);
+		expect(a).toMatchObject({ color: '#2ed8a3', neck: 'bowtie', face: 'shades' });
+		expect(b.color).toBe('#ff7a3d');
 	});
 });
 

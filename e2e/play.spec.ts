@@ -19,7 +19,7 @@ test('the first creature waits to be taught, then a drawn zap makes it a friend'
 	page
 }) => {
 	await page.goto('/');
-	await page.getByLabel('Play as the purple squid').click();
+	await page.getByLabel('Play as squid 1').click();
 	await page.getByRole('button', { name: 'Easy' }).click();
 	await expect.poll(async () => (await state(page)).teaching, { timeout: 15_000 }).toBe('zigzag');
 
@@ -39,7 +39,7 @@ test('the first creature waits to be taught, then a drawn zap makes it a friend'
 test('easy mode teaches a square for the jellyfish, not a swirl', async ({ page }) => {
 	await page.clock.install();
 	await page.goto('/');
-	await page.getByLabel('Play as the purple squid').click();
+	await page.getByLabel('Play as squid 1').click();
 	await page.getByRole('button', { name: 'Easy' }).click();
 	await page.clock.runFor(8000);
 	expect((await state(page)).teaching).toBe('zigzag');
@@ -60,7 +60,7 @@ test('hard mode has 3 hearts and a game over, then a retry', async ({ page }) =>
 	);
 	await page.clock.install();
 	await page.goto('/');
-	await page.getByLabel('Play as the purple squid').click();
+	await page.getByLabel('Play as squid 1').click();
 	await page.getByRole('button', { name: 'Hard' }).click();
 	expect((await state(page)).hearts).toBe(3);
 	// Draw nothing and let the creatures bump the squid.
@@ -77,4 +77,18 @@ test('asks to turn the phone sideways in portrait', async ({ page }) => {
 	await expect(page.getByRole('alert', { name: 'Turn your device sideways' })).toBeVisible();
 	await page.setViewportSize({ width: 844, height: 390 });
 	await expect(page.getByRole('alert')).toBeHidden();
+});
+
+test('the dressing room changes the colour and outfit, and remembers them', async ({ page }) => {
+	await page.goto('/');
+	await page.getByLabel('Dress up').first().click();
+	await page.getByLabel('Colour 4').click();
+	await page.getByLabel('shades').click();
+	await page.getByLabel('bowtie').click();
+	// Hats have to be won first.
+	await expect(page.getByLabel('Hat to win').first()).toBeDisabled();
+	await page.getByLabel('Done').click();
+	await page.reload();
+	const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('squid-spells-v1')!)[0]);
+	expect(saved).toMatchObject({ color: '#3d8bff', face: 'shades', neck: 'bowtie' });
 });

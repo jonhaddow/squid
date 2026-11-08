@@ -1,5 +1,6 @@
 // Landscape phone screenshot of the local app: the start screen, or with
-// --play, the game a few seconds in. Usage: node scripts/shot.ts [out.png] [--play] [--port 5187]
+// --play, the game a few seconds in, or with --dress, the dressing room.
+// Usage: node scripts/shot.ts [out.png] [--play|--dress] [--port 5187]
 import { chromium } from 'playwright';
 
 const args = process.argv.slice(2);
@@ -16,8 +17,12 @@ page.on('pageerror', (e) => console.log('pageerror:', e.message));
 await page.goto(`http://localhost:${port}/`);
 await page.waitForTimeout(1000);
 if (args.includes('--play')) {
-	await page.getByLabel('Play as the purple squid').click();
+	await page.getByLabel('Play as squid 1').click();
 	await page.waitForTimeout(8000);
+}
+if (args.includes('--dress')) {
+	await page.getByLabel('Dress up').first().click();
+	await page.waitForTimeout(500);
 }
 await page.screenshot({ path: out });
 await browser.close();
