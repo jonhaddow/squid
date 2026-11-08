@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { dev } from '$app/env';
+	import { dev, version } from '$app/env';
 	import SquidPreview from '#lib/components/SquidPreview.svelte';
 	import { unlock, sounds } from '#lib/game/audio.ts';
 	import { Game, HEARTS } from '#lib/game/game.ts';
@@ -18,6 +18,8 @@
 	/** Bumped to restart the game: the next level, or a retry. */
 	let round = $state(0);
 	let portrait = $state(false);
+	/** A new version has taken over: reload into it when nobody's mid-game. */
+	let updated = $state(false);
 
 	onMount(() => {
 		players = loadPlayers(localStorage);
@@ -25,11 +27,44 @@
 		portrait = query.matches;
 		const change = () => (portrait = query.matches);
 		query.addEventListener('change', change);
-		// Offline play. Re-registering fails offline, which doesn't matter.
-		navigator.serviceWorker
-			?.register('/service-worker.js', { type: dev ? 'module' : 'classic' })
-			.catch(() => {});
 		return () => query.removeEventListener('change', change);
+	});
+
+	// Offline play and updates. The service worker keeps a copy of the whole
+	// app (in a cache named after its version) so it works offline. A new
+	// deploy's worker downloads its version, swaps the copy and takes over; this
+	// page notices the copy is newer than itself. iPads resume the home-screen
+	// app rather than relaunching it, so check each time it comes back on
+	// screen too. Checks fail offline, which doesn't matter.
+	onMount(() => {
+		const sw = navigator.serviceWorker;
+		if (!sw) return;
+		sw.register('/service-worker.js', { type: dev ? 'module' : 'classic' }).catch(() => {});
+		const newer = async () => {
+			// Versions are build times, so a bigger one is newer.
+			const keys = await caches.keys();
+			if (keys.some((k) => k.startsWith('squid-') && Number(k.slice(6)) > Number(version)))
+				updated = true;
+		};
+		const takeover = () => void newer();
+		const check = () => {
+			if (document.visibilityState === 'visible')
+				sw.getRegistration()
+					.then((r) => r?.update())
+					.then(newer)
+					.catch(() => {});
+		};
+		sw.addEventListener('controllerchange', takeover);
+		document.addEventListener('visibilitychange', check);
+		return () => {
+			sw.removeEventListener('controllerchange', takeover);
+			document.removeEventListener('visibilitychange', check);
+		};
+	});
+
+	// Never mid-level: only on the start screen (progress is already saved).
+	$effect(() => {
+		if (updated && playing === null && chosen === null) location.reload();
 	});
 
 	const HEART =
