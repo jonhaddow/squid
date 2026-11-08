@@ -411,20 +411,89 @@ export function drawThing(ctx: Ctx, s: number, thing: Thing) {
 	ctx.restore();
 }
 
-export type Creature = 'crab' | 'jelly' | 'puffer' | 'fish';
+export type Creature = 'crab' | 'jelly' | 'puffer' | 'fish' | 'turtle';
 export const CREATURE: Record<Shape, Creature> = {
 	zigzag: 'crab',
 	swirl: 'jelly',
 	square: 'jelly',
 	circle: 'puffer',
-	triangle: 'fish'
+	triangle: 'fish',
+	arch: 'turtle'
 };
 
 export function drawCreature(ctx: Ctx, kind: Creature, s: number, t: number, happy: boolean) {
 	if (kind === 'crab') drawCrab(ctx, s, t, happy);
 	else if (kind === 'jelly') drawJelly(ctx, s, t, happy);
 	else if (kind === 'fish') drawFish(ctx, s, t, happy);
+	else if (kind === 'turtle') drawTurtle(ctx, s, t, happy);
 	else drawPuffer(ctx, s, t, happy);
+}
+
+/** A sea turtle: a half-circle shell (its spell's shape), head on the left as it swims left. */
+function drawTurtle(ctx: Ctx, s: number, t: number, happy: boolean) {
+	const paddle = Math.sin(t * 4);
+	ctx.fillStyle = '#7ed957';
+	// Flippers, front and back, paddling.
+	for (const [x, size, swing] of [
+		[-s * 0.16, 1, paddle],
+		[s * 0.22, 0.65, -paddle]
+	]) {
+		ctx.save();
+		ctx.translate(x, s * 0.06);
+		ctx.rotate(0.5 + swing * 0.35);
+		ctx.beginPath();
+		ctx.ellipse(0, s * 0.12 * size, s * 0.06 * size, s * 0.14 * size, 0, 0, TAU);
+		ctx.fill();
+		ctx.restore();
+	}
+	// Little tail.
+	ctx.beginPath();
+	ctx.moveTo(s * 0.3, s * 0.02);
+	ctx.lineTo(s * 0.4, s * 0.06);
+	ctx.lineTo(s * 0.3, s * 0.09);
+	ctx.fill();
+	// Head.
+	circle(ctx, -s * 0.36, -s * 0.04, s * 0.12, '#7ed957');
+	// Belly, then the shell: a dome over it.
+	ctx.beginPath();
+	ctx.ellipse(0, s * 0.05, s * 0.32, s * 0.06, 0, 0, TAU);
+	ctx.fillStyle = '#f2e3a0';
+	ctx.fill();
+	ctx.beginPath();
+	ctx.ellipse(0, s * 0.05, s * 0.32, s * 0.3, 0, Math.PI, TAU);
+	ctx.closePath();
+	ctx.fillStyle = '#2f9e6b';
+	ctx.fill();
+	ctx.save();
+	ctx.clip();
+	// Shell plates.
+	ctx.fillStyle = '#56c48a';
+	circle(ctx, 0, -s * 0.11, s * 0.09, '#56c48a');
+	for (const side of [-1, 1]) {
+		circle(ctx, side * s * 0.19, -s * 0.04, s * 0.07, '#56c48a');
+		circle(ctx, side * s * 0.1, -s * 0.2, s * 0.05, '#56c48a');
+	}
+	ctx.restore();
+	ctx.strokeStyle = '#1f7a50';
+	ctx.lineWidth = s * 0.025;
+	ctx.stroke();
+	// Face, on the head.
+	ctx.save();
+	ctx.translate(-s * 0.37, -s * 0.04);
+	for (const x of [-s * 0.05, s * 0.04]) circle(ctx, x, -s * 0.03, s * 0.032, '#fff');
+	for (const x of [-s * 0.06, s * 0.03]) circle(ctx, x, -s * 0.028, s * 0.018, '#1a1033');
+	if (!happy) {
+		ctx.strokeStyle = '#1a1033';
+		ctx.lineWidth = s * 0.02;
+		ctx.beginPath();
+		ctx.moveTo(-s * 0.09, -s * 0.085);
+		ctx.lineTo(-s * 0.02, -s * 0.065);
+		ctx.moveTo(s * 0.08, -s * 0.085);
+		ctx.lineTo(s * 0.01, -s * 0.065);
+		ctx.stroke();
+	} else cheeks(ctx, s * 0.06, s * 0.02, s * 0.022);
+	mouth(ctx, s * 0.5, s * 0.06, happy);
+	ctx.restore();
 }
 
 /** An angelfish: a tall triangle of a body with stripes. */

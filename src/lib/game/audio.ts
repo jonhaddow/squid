@@ -65,6 +65,10 @@ export const sounds = {
 		for (const [i, f] of [1047, 1319, 1568, 2093].entries())
 			tone(f, { at: i * 0.05, length: 0.25, type: 'sine', volume: 0.1 });
 	},
+	rainbow() {
+		for (const [i, f] of [392, 523, 659, 784, 1047].entries())
+			tone(f, { at: i * 0.06, length: 0.3, type: 'sine', slide: 40, volume: 0.1 });
+	},
 	/** The kraken arriving: a low, wobbly rumble, more silly than scary. */
 	kraken() {
 		for (const [i, f] of [110, 98, 123].entries())

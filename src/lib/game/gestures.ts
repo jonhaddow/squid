@@ -1,18 +1,18 @@
 // Tells which spell shape a finger drew: a circle (shield), a zigzag (zap), a
-// swirl (bubbles, hard mode), a square (bubbles, easy mode) or a triangle
-// (fins). Forgiving on purpose: a 6 year old's wobbly circle counts.
+// swirl (bubbles, hard mode), a square (bubbles, easy mode), a triangle
+// (fins) or a half circle, an arch (a rainbow, for the sea turtle). Forgiving on purpose: a 6 year old's wobbly circle counts.
 // It works on how much the line turns overall, so size, speed, direction and
 // where on the screen it was drawn don't matter.
 
-export type Shape = 'circle' | 'zigzag' | 'swirl' | 'square' | 'triangle';
+export type Shape = 'circle' | 'zigzag' | 'swirl' | 'square' | 'triangle' | 'arch';
 export type Point = { x: number; y: number };
 
 export type Mode = 'easy' | 'hard';
 
 /** The shapes each mode uses: easy swaps the swirl for a square. */
 export const SHAPES: Record<Mode, Shape[]> = {
-	easy: ['zigzag', 'square', 'circle', 'triangle'],
-	hard: ['zigzag', 'swirl', 'circle', 'triangle']
+	easy: ['zigzag', 'square', 'circle', 'triangle', 'arch'],
+	hard: ['zigzag', 'swirl', 'circle', 'triangle', 'arch']
 };
 
 /** Strokes smaller than this (CSS px across) are taps, not shapes. */
@@ -174,6 +174,16 @@ export function classify(raw: Point[]): Shape | null {
 	const points = resample(raw);
 	const loops = Math.abs(netTurning(points)) / (2 * Math.PI);
 	const { corners, straight } = angles(points);
+	const min = size * 0.2;
+	const back = Math.max(reversals(xs, min), reversals(ys, min));
+	// Half a loop, its ends far apart, a round middle (a V is too thin) and no
+	// back and forth (a zigzag): an arch, any way up. Measured on a few
+	// points, as a wobbly line adds turns either way.
+	const first = points[0];
+	const last = points[points.length - 1];
+	const gap = Math.hypot(last.x - first.x, last.y - first.y) / size;
+	const half = Math.abs(netTurning(resample(raw, 12))) / (2 * Math.PI);
+	if (half >= 0.25 && half < 0.72 && gap > 0.65 && fill(points) >= 0.62 && back < 2) return 'arch';
 	if (loops >= 1.6) return 'swirl';
 	// One loop: a triangle if it's thin with corners, a square if it's full with corners, otherwise a circle.
 	if (loops >= 0.55) {
@@ -182,8 +192,6 @@ export function classify(raw: Point[]): Shape | null {
 		if (loops >= 0.65) return corners >= 3 && straight >= 0.3 && full >= 0.62 ? 'square' : 'circle';
 	}
 
-	const min = size * 0.2;
-	const back = Math.max(reversals(xs, min), reversals(ys, min));
 	if (back >= 2 && loops < 0.6) return 'zigzag';
 	return null;
 }
@@ -226,6 +234,10 @@ export function guide(shape: Shape, n = 60): Point[] {
 			const a = TRIANGLE[side];
 			const b = TRIANGLE[(side + 1) % 3];
 			out.push({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f });
+		} else if (shape === 'arch') {
+			// A rainbow, left to right over the top.
+			const a = Math.PI + t * Math.PI;
+			out.push({ x: 0.5 + 0.45 * Math.cos(a), y: 0.72 + 0.45 * Math.sin(a) });
 		} else if (shape === 'swirl') {
 			const a = t * Math.PI * 4.4;
 			const r = 0.08 + 0.42 * t;

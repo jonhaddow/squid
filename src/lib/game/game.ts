@@ -74,6 +74,7 @@ export const HEARTS = 3;
 const SPELL_TIME = 0.45;
 const FONT = '"Luckiest Guy", system-ui, sans-serif';
 const CONFETTI = ['#ffe066', '#ff5fa2', '#7cf0ff', '#b45cff', '#5dff9d'];
+const RAINBOW = ['#ff5f5f', '#ffb13d', '#ffe066', '#5dff9d', '#5fb8ff'];
 /** The kraken's sizes and speeds, relative to a normal creature. */
 const KRAKEN = {
 	size: 2.4,
@@ -264,6 +265,7 @@ export class Game {
 			this.flash = 1;
 		} else if (target.shape === 'swirl' || target.shape === 'square') sounds.bubbles();
 		else if (target.shape === 'triangle') sounds.twinkle();
+		else if (target.shape === 'arch') sounds.rainbow();
 		else sounds.shield();
 	}
 
@@ -596,6 +598,19 @@ export class Game {
 			ctx.translate(at.x, at.y);
 			ctx.rotate(f * Math.PI * 4);
 			art.tracePath(ctx, [...TRIANGLE, TRIANGLE[0]], 40 + f * 30, '#7cf0ff', 6);
+			ctx.restore();
+		} else if (spell.shape === 'arch') {
+			// A rainbow, growing as it flies.
+			const r = 20 + f * 30;
+			ctx.save();
+			ctx.lineWidth = 5;
+			ctx.lineCap = 'round';
+			for (let i = 0; i < RAINBOW.length; i++) {
+				ctx.beginPath();
+				ctx.arc(at.x, at.y + r * 0.4, r - i * 5, Math.PI, Math.PI * 2);
+				ctx.strokeStyle = RAINBOW[i];
+				ctx.stroke();
+			}
 			ctx.restore();
 		} else if (spell.shape === 'swirl' || spell.shape === 'square') {
 			for (let i = 0; i < 6; i++) {
