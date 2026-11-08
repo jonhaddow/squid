@@ -106,14 +106,14 @@ test('the start screen posts the best game and shows the leaderboard', async ({ 
 		posted.push(route.request().postDataJSON());
 		return route.fulfill({
 			json: [
-				{ name: 'Inky', color: '#b45cff', best: 14, me: true },
-				{ name: 'Blub', color: '#ff7a3d', best: 9, me: false }
+				{ name: 'Inky', color: '#b45cff', hat: null, neck: null, face: null, best: 14, me: true },
+				{ name: 'Blub', color: '#ff7a3d', hat: 'crown', neck: null, face: null, best: 9, me: false }
 			]
 		});
 	});
 	await page.goto('/');
 	const board = page.getByRole('list', { name: 'High scores' });
-	await expect(board.getByRole('listitem')).toHaveText([/Inky\s*14/, /Blub\s*9/]);
+	await expect(board.getByRole('listitem')).toHaveText([/1st\s*Inky\s*14/, /2nd\s*Blub\s*9/]);
 	expect(posted[0]).toMatchObject({ name: 'Inky', best: 14, color: '#b45cff' });
 });
 
@@ -184,8 +184,8 @@ test('the dressing room changes the colour and outfit, and remembers them', asyn
 	await page.getByLabel('shades').click();
 	await page.getByLabel('bowtie').click();
 	await page.getByLabel('Name').fill('Inky');
-	// Hats have to be won first.
-	await expect(page.getByLabel('Hat to win').first()).toBeDisabled();
+	// Prizes have to be won first.
+	await expect(page.getByLabel('Prize to win').first()).toBeDisabled();
 	await page.getByLabel('Done').click();
 	await page.reload();
 	await expect(page.getByText('Inky')).toBeVisible();

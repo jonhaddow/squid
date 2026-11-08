@@ -2,13 +2,53 @@
 // Pure apart from the storage passed in, so it's unit tested.
 import { SHAPES, type Mode, type Shape } from './gestures.ts';
 
-export const HATS = ['wizard', 'crown', 'pirate', 'party', 'top', 'flower'] as const;
+export const HATS = [
+	'wizard',
+	'crown',
+	'pirate',
+	'party',
+	'top',
+	'flower',
+	'chef',
+	'cowboy',
+	'viking',
+	'beanie'
+] as const;
 export type Hat = (typeof HATS)[number];
-/** Dress-up bits that aren't won: any squid can wear them from the start. */
-export const NECKS = ['pearls', 'bowtie', 'scarf', 'medal'] as const;
+export const NECKS = ['pearls', 'bowtie', 'scarf', 'medal', 'lei', 'tie'] as const;
 export type Neck = (typeof NECKS)[number];
-export const FACES = ['glasses', 'shades', 'hearts', 'monocle'] as const;
+export const FACES = [
+	'glasses',
+	'shades',
+	'hearts',
+	'monocle',
+	'goggles',
+	'stars',
+	'tash'
+] as const;
 export type Face = (typeof FACES)[number];
+export type Prize = Hat | Neck | Face;
+/** Won one a wave, in this order: every hat, and the newer necks and glasses. */
+export const PRIZES: readonly Prize[] = [
+	'wizard',
+	'crown',
+	'pirate',
+	'party',
+	'top',
+	'flower',
+	'lei',
+	'chef',
+	'goggles',
+	'cowboy',
+	'tie',
+	'stars',
+	'viking',
+	'tash',
+	'beanie'
+];
+/** Not in PRIZES (the first necks and glasses): any squid can wear these from the start. */
+export const isLocked = (player: Player, item: Prize) =>
+	PRIZES.includes(item) && !player.won.includes(item);
 
 export type Player = {
 	/** The squid's name, typed in the dressing room ('' for none yet). */
@@ -19,7 +59,8 @@ export type Player = {
 	level: number;
 	/** Most friends made in one hard-mode game: the leaderboard score. */
 	best: number;
-	hats: Hat[];
+	/** Prizes won so far (saved as `hats` from when only hats were won). */
+	won: Prize[];
 	hat: Hat | null;
 	neck: Neck | null;
 	face: Face | null;
@@ -51,7 +92,7 @@ export function newPlayer(): Player {
 		color: PALETTE[0],
 		level: 1,
 		best: 0,
-		hats: [],
+		won: [],
 		hat: null,
 		neck: null,
 		face: null,
@@ -67,7 +108,10 @@ export function loadPlayer(store: Store): Player {
 	try {
 		const saved = JSON.parse(store.getItem(KEY) ?? 'null') as Partial<Player>[] | null;
 		if (!Array.isArray(saved)) return fresh;
-		const player = { ...fresh, ...saved[0] };
+		const { hats, ...rest } = (saved[0] ?? {}) as Partial<Player> & { hats?: Hat[] };
+		const player = { ...fresh, ...rest };
+		// A save from before `won`. One with both was written over by an older cached build: keep `won`.
+		if (hats && !rest.won) player.won = hats;
 		// Only colours from the palette: the drawing code needs a #rrggbb.
 		if (!PALETTE.includes(player.color)) player.color = fresh.color;
 		player.name = typeof player.name === 'string' ? player.name.slice(0, NAME_MAX) : '';
@@ -85,12 +129,12 @@ export function savePlayer(store: Store, player: Player) {
 	}
 }
 
-/** After each wave: the next hat to choose in the dressing room (what they're wearing stays), and easy mode remembers the wave. */
-export function finishWave(player: Player, mode: Mode): Hat | null {
-	const hat = HATS.find((h) => !player.hats.includes(h)) ?? null;
-	if (hat) player.hats.push(hat);
+/** After each wave: the next prize to choose in the dressing room (what they're wearing stays), and easy mode remembers the wave. */
+export function finishWave(player: Player, mode: Mode): Prize | null {
+	const prize = PRIZES.find((p) => !player.won.includes(p)) ?? null;
+	if (prize) player.won.push(prize);
 	if (mode === 'easy') player.level++;
-	return hat;
+	return prize;
 }
 
 // Both modes are endless: creatures keep coming in waves of WAVE friends.

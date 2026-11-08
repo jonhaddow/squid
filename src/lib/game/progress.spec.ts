@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+	FACES,
+	HATS,
+	NECKS,
+	isLocked,
+	PRIZES,
 	bossShapes,
 	finishWave,
 	isBossWave,
@@ -24,7 +29,7 @@ describe('player', () => {
 	it('fills in new fields for older saves', () => {
 		const store = memory();
 		store.setItem('squid-spells-v1', JSON.stringify([{ level: 3 }]));
-		expect(loadPlayer(store)).toMatchObject({ level: 3, best: 0, name: '', hats: [] });
+		expect(loadPlayer(store)).toMatchObject({ level: 3, best: 0, name: '', won: [] });
 	});
 
 	it('keeps the first squid of an old two-squid save', () => {
@@ -54,7 +59,38 @@ describe('player', () => {
 		expect(finishWave(p, 'easy')).toBe('wizard');
 		expect(finishWave(p, 'hard')).toBe('crown');
 		// Only easy mode remembers the wave: hard mode starts again each game.
-		expect(p).toMatchObject({ level: 2, hats: ['wizard', 'crown'], hat: null });
+		expect(p).toMatchObject({ level: 2, won: ['wizard', 'crown'], hat: null });
+	});
+
+	it('wins every prize once, then nothing more', () => {
+		const p = newPlayer();
+		const won = PRIZES.map(() => finishWave(p, 'easy'));
+		expect(won).toEqual(PRIZES);
+		expect(finishWave(p, 'easy')).toBeNull();
+		expect(isLocked(p, 'beanie')).toBe(false);
+	});
+
+	it('has every hat as a prize, and each prize in exactly one rail', () => {
+		expect(HATS.every((h) => PRIZES.includes(h))).toBe(true);
+		const all: readonly string[][] = [[...HATS], [...NECKS], [...FACES]];
+		for (const p of PRIZES) expect(all.filter((rail) => rail.includes(p))).toHaveLength(1);
+		expect(new Set(PRIZES).size).toBe(PRIZES.length);
+	});
+
+	it('keeps the first necks and glasses free, and locks the rest until won', () => {
+		const p = newPlayer();
+		expect(isLocked(p, 'pearls')).toBe(false);
+		expect(isLocked(p, 'monocle')).toBe(false);
+		expect(isLocked(p, 'lei')).toBe(true);
+		expect(isLocked(p, 'tash')).toBe(true);
+	});
+
+	it('keeps hats won before there were other prizes', () => {
+		const store = memory();
+		store.setItem('squid-spells-v1', JSON.stringify([{ hats: ['wizard', 'crown'] }]));
+		const p = loadPlayer(store);
+		expect(p.won).toEqual(['wizard', 'crown']);
+		expect(p).not.toHaveProperty('hats');
 	});
 
 	it('keeps a name, trimmed to fit', () => {

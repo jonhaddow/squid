@@ -11,13 +11,13 @@
 	import {
 		FACES,
 		HATS,
+		isLocked,
 		loadPlayer,
 		NAME_MAX,
 		NECKS,
 		newPlayer,
 		PALETTE,
 		savePlayer,
-		type Hat,
 		type Look
 	} from '#lib/game/progress.ts';
 	import { syncScores, type Row } from '#lib/scores.ts';
@@ -35,6 +35,8 @@
 	let height = $state(400);
 	/** The big squid in the dressing room. */
 	const mirror = $derived(Math.round(Math.min(340, height * 0.8, width * 0.32)));
+	/** Each squid on the leaderboard. */
+	const squidlet = $derived(Math.round(Math.min(72, height * 0.16)));
 	let playing = $state(false);
 	let mode = $state<Mode>('easy');
 	/** Hard mode ran out of hearts. Both modes are endless otherwise. */
@@ -115,6 +117,8 @@
 		{ kind: 'face', label: 'Glasses', items: FACES, none: 'No glasses' }
 	] as const;
 
+	/** Medals for the top 3 on the leaderboard. */
+	const PLACES = ['1st', '2nd', '3rd'];
 	const HEART =
 		'M12 21C5 15.5 2 12.3 2 8.5A4.8 4.8 0 0 1 12 6a4.8 4.8 0 0 1 10 2.5c0 3.8-3 7-10 12.5z';
 
@@ -259,14 +263,14 @@
 							onclick={() => wear({ [rail.kind]: null })}>{@render none()}</button
 						>
 						{#each rail.items as item (item)}
-							<!-- Hats are won, one a level: the rest show as shadows to play for. -->
-							{@const locked = rail.kind === 'hat' && !player.hats.includes(item as Hat)}
+							<!-- Prizes are won, one a wave: the rest show as shadows to play for. -->
+							{@const locked = isLocked(player, item)}
 							<button
 								class="tile"
 								class:on={player[rail.kind] === item}
 								class:locked
 								disabled={locked}
-								aria-label={locked ? 'Hat to win' : item}
+								aria-label={locked ? 'Prize to win' : item}
 								aria-pressed={player[rail.kind] === item}
 								onclick={() => wear({ [rail.kind]: item })}
 							>
@@ -345,10 +349,11 @@
 					</div>
 					{#if board.length}
 						<!-- The family leaderboard: best hard-mode game, a row per device. -->
-						<ol class="board" aria-label="High scores">
+						<ol class="board" aria-label="High scores" style:--s="{squidlet}px">
 							{#each board as row, i (i)}
-								<li class:me={row.me} style:--squid={row.color}>
-									<span class="blob" aria-hidden="true"></span>
+								<li class:me={row.me}>
+									<span class="place place-{i + 1}">{PLACES[i] ?? ''}</span>
+									<SquidPreview look={row} size={squidlet} />
 									<span class="who">{row.name || '?'}</span>
 									<span class="score">{row.best}</span>
 								</li>
@@ -584,8 +589,8 @@
 		padding: 10px 14px;
 		list-style: none;
 		display: grid;
-		gap: 4px;
-		min-width: min(34vw, 260px);
+		gap: 0;
+		min-width: min(40vw, 320px);
 		background: rgba(255, 255, 255, 0.06);
 		border: 4px solid var(--ink);
 		font-size: clamp(18px, 6vh, 28px);
@@ -601,13 +606,25 @@
 		border-color: var(--gold);
 		background: rgba(255, 224, 102, 0.15);
 	}
-	.blob {
+	.place {
 		flex: none;
-		width: 0.9em;
-		height: 0.9em;
-		border-radius: 50%;
-		background: var(--squid);
-		box-shadow: 0 0 0 3px var(--ink);
+		width: 2.2em;
+		font-size: 0.8em;
+		text-align: center;
+	}
+	.place-1 {
+		color: var(--gold);
+	}
+	.place-2 {
+		color: #d8e2f0;
+	}
+	.place-3 {
+		color: #ff9f5a;
+	}
+	/* The preview leaves room for a tall hat: let rows overlap that space. */
+	.board :global(canvas) {
+		flex: none;
+		margin: calc(var(--s) * -0.16) calc(var(--s) * -0.1);
 	}
 	.who {
 		flex: 1;
@@ -626,12 +643,16 @@
 		display: block;
 	}
 	.rails {
+		--gap: min(1.2vw, 10px);
 		display: grid;
 		gap: 2.5vh;
+		/* As wide as the 8 colours: the longer rails (hats) wrap onto a second row. */
+		max-width: calc(8 * var(--tile) + 7 * var(--gap));
 	}
 	.rail {
 		display: flex;
-		gap: min(1.2vw, 10px);
+		flex-wrap: wrap;
+		gap: var(--gap);
 	}
 	.tile {
 		width: var(--tile);
@@ -666,7 +687,7 @@
 			0 0 0 4px var(--ink),
 			0 0 18px var(--c);
 	}
-	/* Hats not won yet: a dark shadow of the hat. */
+	/* Prizes not won yet: a dark shadow of the thing. */
 	.locked {
 		cursor: default;
 	}

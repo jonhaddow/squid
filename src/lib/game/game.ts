@@ -3,7 +3,7 @@
 // friend. In easy mode nothing hurts: a creature that reaches the squid just
 // bumps it and backs off, and every wave is the same pace. Hard mode is faster,
 // has 3 hearts and a game over, and speeds up every wave (and gets busier, to a
-// limit). Both are endless: every WAVE friends wins a hat. A creature the child
+// limit). Both are endless: every WAVE friends wins a prize. A creature the child
 // hasn't cast yet stops, and a finger draws its shape until the child copies it.
 // Every 3rd wave ends with the kraken: the other creatures swim off, and it
 // needs 3 spells, a random shape each, to become a friend.
@@ -479,14 +479,14 @@ export class Game {
 		this.events.gameOver();
 	}
 
-	/** A wave of friends: a hat, a party, and on to the next (in hard mode, a bit harder) wave. */
+	/** A wave of friends: a prize, a party, and on to the next (in hard mode, a bit harder) wave. */
 	private nextWave() {
-		const hat = finishWave(this.player, this.mode);
+		const prize = finishWave(this.player, this.mode);
 		this.wave++;
 		this.pace = planWave(this.wave, this.mode);
 		this.party = 2.5;
 		sounds.fanfare();
-		say(hat ? 'A new hat!' : this.mode === 'hard' ? 'Faster!' : 'Well done!');
+		say(prize ? 'A new prize!' : this.mode === 'hard' ? 'Faster!' : 'Well done!');
 		this.burst({ x: this.w / 2, y: this.h * 0.4 }, 'confetti', 80, '');
 	}
 
