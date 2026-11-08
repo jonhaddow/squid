@@ -34,9 +34,9 @@
 	let width = $state(800);
 	let height = $state(400);
 	/** The big squid in the dressing room. */
+	const mirror = $derived(Math.round(Math.min(340, height * 0.8, width * 0.32)));
 	/** Each squid on the leaderboard. */
 	const squidlet = $derived(Math.round(Math.min(72, height * 0.16)));
-	const mirror = $derived(Math.round(Math.min(340, height * 0.8, width * 0.32)));
 	let playing = $state(false);
 	let mode = $state<Mode>('easy');
 	/** Hard mode ran out of hearts. Both modes are endless otherwise. */
@@ -351,7 +351,7 @@
 						<!-- The family leaderboard: best hard-mode game, a row per device. -->
 						<ol class="board" aria-label="High scores" style:--s="{squidlet}px">
 							{#each board as row, i (i)}
-								<li class:me={row.me} style:--squid={row.color}>
+								<li class:me={row.me}>
 									<span class="place place-{i + 1}">{PLACES[i] ?? ''}</span>
 									<SquidPreview look={row} size={squidlet} />
 									<span class="who">{row.name || '?'}</span>
