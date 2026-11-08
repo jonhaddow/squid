@@ -1,11 +1,10 @@
 // The game: grumpy sea creatures swim towards your squid, each showing the
 // shape it needs. Draw that shape anywhere and the squid's spell makes it a
 // friend. In easy mode nothing hurts: a creature that reaches the squid just
-// bumps it and backs off, and creatures always swim at one speed. Hard mode is
-// faster, has 3 hearts and a game over. Both are endless: every WAVE friends
-// wins a hat and things get busier (and faster in hard mode), to a limit. A
-// creature the child hasn't cast yet stops, and a finger draws its shape until
-// the child copies it.
+// bumps it and backs off, and every wave is the same pace. Hard mode is faster,
+// has 3 hearts and a game over, and speeds up and gets busier each wave (to a
+// limit). Both are endless: every WAVE friends wins a hat. A creature the child
+// hasn't cast yet stops, and a finger draws its shape until the child copies it.
 import { sounds, say, unlock } from './audio.ts';
 import { classify, guide, isAttempt, type Mode, type Point, type Shape } from './gestures.ts';
 import {
@@ -368,7 +367,7 @@ export class Game {
 		this.events.gameOver();
 	}
 
-	/** A wave of friends: a hat, a party, and on to the next (a bit busier) wave. */
+	/** A wave of friends: a hat, a party, and on to the next (in hard mode, a bit harder) wave. */
 	private nextWave() {
 		const hat = finishWave(this.player, this.mode);
 		this.wave++;

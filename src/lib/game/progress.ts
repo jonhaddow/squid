@@ -96,8 +96,8 @@ export function finishWave(player: Player, mode: Mode): Hat | null {
 }
 
 // Both modes are endless: creatures keep coming in waves of WAVE friends.
-// Each wave is a bit busier, up to TOP_WAVE, then stays there. Hard mode's
-// creatures get faster each wave too; easy mode's always swim at one speed.
+// Easy mode stays as it starts: one speed, one creature at a time. In hard
+// mode each wave is faster and busier, up to TOP_WAVE, then stays there.
 export const WAVE = 10;
 export const TOP_WAVE = 7;
 
@@ -114,11 +114,12 @@ export type Plan = {
 export const HARD_SPEED = 1.3;
 
 export function planWave(wave: number, mode: Mode): Plan {
+	if (mode === 'easy') return { speed: 1, gap: 4.6, crowd: 1 };
 	const w = Math.min(wave, TOP_WAVE);
 	return {
-		speed: mode === 'hard' ? HARD_SPEED * (1 + (w - 1) * 0.12) : 1,
+		speed: HARD_SPEED * (1 + (w - 1) * 0.12),
 		gap: Math.max(1.5, 5 - w * 0.4),
-		crowd: Math.min(4, 1 + Math.floor(w / 2) + (mode === 'hard' ? 1 : 0))
+		crowd: Math.min(4, 2 + Math.floor(w / 2))
 	};
 }
 

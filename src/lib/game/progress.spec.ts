@@ -70,21 +70,23 @@ describe('players', () => {
 });
 
 describe('difficulty', () => {
-	it('teaches each shape first on wave 1, then gets busier, to a limit', () => {
+	it('teaches each shape first on wave 1', () => {
 		expect(firstCreatures(1, 'easy')).toEqual(['zigzag', 'square', 'circle']);
 		expect(firstCreatures(2, 'easy')).toEqual([]);
-		const one = planWave(1, 'easy');
-		expect(one).toMatchObject({ speed: 1, crowd: 1 });
-		const five = planWave(5, 'easy');
-		expect(five.crowd).toBeGreaterThan(one.crowd);
-		expect(planWave(100, 'easy')).toEqual(planWave(TOP_WAVE, 'easy'));
-		expect(planWave(100, 'hard')).toEqual(planWave(TOP_WAVE, 'hard'));
 	});
 
-	it('keeps easy mode at one speed; hard mode starts faster and speeds up', () => {
-		expect(planWave(TOP_WAVE, 'easy').speed).toBe(1);
-		expect(planWave(1, 'hard').speed).toBeGreaterThan(1);
-		expect(planWave(5, 'hard').speed).toBeGreaterThan(planWave(1, 'hard').speed);
+	it('keeps easy mode the same every wave', () => {
+		expect(planWave(1, 'easy')).toEqual({ speed: 1, gap: 4.6, crowd: 1 });
+		expect(planWave(50, 'easy')).toEqual(planWave(1, 'easy'));
+	});
+
+	it('makes hard mode faster and busier each wave, to a limit', () => {
+		const one = planWave(1, 'hard');
+		const five = planWave(5, 'hard');
+		expect(one.speed).toBeGreaterThan(1);
+		expect(five.speed).toBeGreaterThan(one.speed);
+		expect(five.crowd).toBeGreaterThan(one.crowd);
+		expect(planWave(100, 'hard')).toEqual(planWave(TOP_WAVE, 'hard'));
 	});
 
 	it('uses the swirl only in hard mode', () => {

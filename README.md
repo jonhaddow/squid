@@ -4,7 +4,7 @@ A drawing-spells game for Jon's kids (6 and 8), at https://squid.app.haddow.me. 
 
 Each kid's squid has a dressing room (the T-shirt button): a name, a colour, a hat (one unlocked every 10 friends, to put on when they like), something round its neck and glasses.
 
-Both modes are endless: every 10 friends unlocks a hat, and more creatures come at once (up to a limit). Easy mode has no losing, keeps the creatures at one speed and remembers how far they got. Hard mode is faster, speeds up every 10 friends, has 3 hearts and a game over, and starts again each game.
+Both modes are endless: every 10 friends unlocks a hat. Easy mode has no losing, stays at the same pace and remembers how far they got. Hard mode is faster, speeds up and gets busier every 10 friends, has 3 hearts and a game over, and starts again each game.
 
 - Install: open it in Safari (or Chrome), then Share → Add to Home Screen.
 - Landscape only (a rotate prompt shows in portrait), installable as a PWA, and it plays offline.
