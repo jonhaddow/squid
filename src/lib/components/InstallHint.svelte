@@ -4,46 +4,57 @@
 	Android installs it straight away; elsewhere it shows the steps in pictures.
 	Hidden once it's installed and on computers. It glows until it's been opened once.
 -->
-<script lang="ts">
-	import { onMount } from 'svelte';
-	import { install, SEEN_KEY, type Install } from '#lib/install.ts';
+<script lang="ts" module>
+	import { install, type Install } from '#lib/install.ts';
 
 	/** Chrome's own install offer, which it lets a page show when it likes. */
 	type InstallPrompt = Event & { prompt(): Promise<void> };
 
-	let kind = $state<Install>('none');
-	let offer = $state<InstallPrompt | null>(null);
+	// Here, not in the component: Chrome makes its offer once per page load,
+	// maybe while a game's on and this button isn't, and it's needed again
+	// after every game.
+	const hint = $state<{ kind: Install; offer: InstallPrompt | null }>({
+		kind: 'none',
+		offer: null
+	});
+	if (typeof window !== 'undefined') {
+		hint.kind = install({
+			userAgent: navigator.userAgent,
+			maxTouchPoints: navigator.maxTouchPoints,
+			installed:
+				matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches ||
+				(navigator as { standalone?: boolean }).standalone === true
+		});
+		addEventListener('beforeinstallprompt', (e) => {
+			// Computers keep Chrome's own install button.
+			if (hint.kind === 'none') return;
+			e.preventDefault();
+			hint.offer = e as InstallPrompt;
+		});
+		addEventListener('appinstalled', () => {
+			hint.kind = 'none';
+			hint.offer = null;
+		});
+	}
+</script>
+
+<script lang="ts">
+	import { onMount } from 'svelte';
+
+	type Icon = 'share' | 'add' | 'menu' | 'app' | 'safari';
+
+	/** Set once the button's been tapped, so it stops glowing. */
+	const SEEN_KEY = 'squid-install-seen';
+
 	let open = $state(false);
 	let seen = $state(true);
 
 	onMount(() => {
-		const installed =
-			matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches ||
-			(navigator as { standalone?: boolean }).standalone === true;
-		kind = install({
-			userAgent: navigator.userAgent,
-			maxTouchPoints: navigator.maxTouchPoints,
-			installed
-		});
 		try {
 			seen = localStorage.getItem(SEEN_KEY) !== null;
 		} catch {
 			seen = false;
 		}
-		const offered = (e: Event) => {
-			e.preventDefault();
-			offer = e as InstallPrompt;
-		};
-		const done = () => {
-			kind = 'none';
-			offer = null;
-		};
-		addEventListener('beforeinstallprompt', offered);
-		addEventListener('appinstalled', done);
-		return () => {
-			removeEventListener('beforeinstallprompt', offered);
-			removeEventListener('appinstalled', done);
-		};
 	});
 
 	async function tap() {
@@ -53,16 +64,14 @@
 		} catch {
 			// Private mode: it just keeps glowing.
 		}
-		if (offer) {
+		if (hint.offer) {
+			const offer = hint.offer;
+			hint.offer = null;
 			await offer.prompt();
-			offer = null;
 		} else open = true;
 	}
 
-	const STEPS: Record<
-		Exclude<Install, 'none'>,
-		{ icon: string; label: string; note?: string }[]
-	> = {
+	const STEPS: Record<Exclude<Install, 'none'>, { icon: Icon; label: string; note?: string }[]> = {
 		ios: [
 			{ icon: 'share', label: 'Tap Share', note: 'or ••• then Share' },
 			{ icon: 'add', label: 'Add to Home Screen' },
@@ -81,7 +90,7 @@
 	};
 </script>
 
-{#if kind !== 'none' || offer}
+{#if hint.kind !== 'none'}
 	<button class="block install" class:glow={!seen} onclick={tap} aria-label="Add to Home Screen">
 		<!-- A phone with a plus. -->
 		<svg viewBox="0 0 24 24" aria-hidden="true">
@@ -99,13 +108,15 @@
 	</button>
 {/if}
 
-{#if open && kind !== 'none'}
+{#if open && hint.kind !== 'none'}
 	<div class="sheet" role="dialog" aria-modal="true" aria-label="Add to Home Screen">
-		<button class="backdrop" aria-label="Close" onclick={() => (open = false)}></button>
+		<!-- Tapping outside closes it too; the tick is the button for that. -->
+		<button class="backdrop" aria-hidden="true" tabindex="-1" onclick={() => (open = false)}
+		></button>
 		<div class="card">
 			<h2>Add to Home Screen</h2>
 			<ol>
-				{#each STEPS[kind] as step, i (i)}
+				{#each STEPS[hint.kind] as step, i (i)}
 					<li>
 						<span class="n">{i + 1}</span>
 						<span class="icon">
@@ -123,7 +134,7 @@
 										<circle cx="12" cy="5" r="1.6" class="dot" />
 										<circle cx="12" cy="12" r="1.6" class="dot" />
 										<circle cx="12" cy="19" r="1.6" class="dot" />
-									{:else}
+									{:else if step.icon === 'safari'}
 										<!-- Safari's compass. -->
 										<circle cx="12" cy="12" r="9.5" />
 										<path d="M15.5 8.5l-2 5-5 2 2-5z" class="dot" />

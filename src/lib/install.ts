@@ -31,6 +31,3 @@ export function install({ userAgent, maxTouchPoints, installed }: Browser): Inst
 	if (/Android/.test(userAgent)) return 'android';
 	return 'none';
 }
-
-/** Show the steps by themselves only once, the first time; after that they wait behind the button. */
-export const SEEN_KEY = 'squid-install-seen';

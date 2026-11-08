@@ -139,7 +139,7 @@ test.describe('on an iPad in Safari', () => {
 		await page.getByRole('button', { name: 'Add to Home Screen' }).click();
 		const steps = page.getByRole('dialog', { name: 'Add to Home Screen' });
 		await expect(steps.getByText('Tap Share')).toBeVisible();
-		await steps.getByRole('button', { name: 'Close' }).last().click();
+		await steps.getByRole('button', { name: 'Close' }).click();
 		await expect(steps).toBeHidden();
 	});
 });
