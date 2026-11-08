@@ -225,11 +225,14 @@
 	<div class="rotate" role="alert" aria-label="Turn your device sideways">
 		<div class="turn">
 			<div class="phone">
-				<SquidPreview
-					color={players[0]?.color ?? '#b45cff'}
-					hat={players[0]?.hat ?? null}
-					size={96}
-				/>
+				<!-- Only while it shows: its animation would cost frames during play. -->
+				{#if portrait}
+					<SquidPreview
+						color={players[playing ?? 0]?.color ?? '#b45cff'}
+						hat={players[playing ?? 0]?.hat ?? null}
+						size={96}
+					/>
+				{/if}
 			</div>
 			<svg class="arrow" viewBox="0 0 100 100" aria-hidden="true">
 				<path d="M90 30 A46 46 0 0 0 10 30" />
