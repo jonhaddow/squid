@@ -46,10 +46,10 @@ const KEY = 'squid-spells-v1';
 /** Long enough for any kid's name, short enough to fit under the squid. */
 export const NAME_MAX = 12;
 
-export function newPlayer(color = PALETTE[0]): Player {
+export function newPlayer(): Player {
 	return {
 		name: '',
-		color,
+		color: PALETTE[0],
 		level: 1,
 		stars: 0,
 		best: 0,

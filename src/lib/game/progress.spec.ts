@@ -49,7 +49,7 @@ describe('player', () => {
 	});
 
 	it('unlocks a new hat each wave without changing what they wear', () => {
-		const p = newPlayer('#fff');
+		const p = newPlayer();
 		p.hat = null;
 		expect(finishWave(p, 'easy')).toBe('wizard');
 		expect(finishWave(p, 'hard')).toBe('crown');

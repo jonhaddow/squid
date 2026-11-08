@@ -1,7 +1,8 @@
 // The leaderboard's only route: save this device's squid, return the top squids.
 import { env } from 'cloudflare:workers';
 import { error, json } from '@sveltejs/kit';
-import { parseEntry, TOP, type Row } from '#lib/scores.ts';
+import { parseEntry, TOP } from '#lib/server/scores.ts';
+import type { Row } from '#lib/scores.ts';
 import type { RequestHandler } from './$types';
 
 export const prerender = false;

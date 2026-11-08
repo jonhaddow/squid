@@ -99,6 +99,7 @@
 
 	// Each time the start screen shows: post the squid's best and fetch the board.
 	$effect(() => {
+		// After the save loads, so it posts this squid's best, not a fresh one's.
 		if (!home || !loaded) return;
 		let live = true;
 		void syncScores(untrack(() => $state.snapshot(player))).then((rows) => {
@@ -114,7 +115,6 @@
 		{ kind: 'face', label: 'Glasses', items: FACES, none: 'No glasses' }
 	] as const;
 
-	const STAR = 'M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z';
 	const HEART =
 		'M12 21C5 15.5 2 12.3 2 8.5A4.8 4.8 0 0 1 12 6a4.8 4.8 0 0 1 10 2.5c0 3.8-3 7-10 12.5z';
 
@@ -324,7 +324,11 @@
 						<button class="pick" onclick={pick} aria-label="Play" style:--squid={player.color}>
 							<SquidPreview look={player} />
 							<span class="stars" aria-label="{player.stars} stars">
-								<svg viewBox="0 0 24 24" aria-hidden="true"><path d={STAR} /></svg>
+								<svg viewBox="0 0 24 24" aria-hidden="true"
+									><path
+										d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"
+									/></svg
+								>
 								{player.stars}
 							</span>
 						</button>
