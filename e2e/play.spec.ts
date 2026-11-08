@@ -20,7 +20,7 @@ test('the first creature waits to be taught, then a drawn zap makes it a friend'
 }) => {
 	await page.goto('/');
 	await page.getByLabel('Play', { exact: true }).click();
-	await page.getByRole('button', { name: 'Easy' }).click();
+	await page.getByRole('button', { name: 'Endless' }).click();
 	await expect.poll(async () => (await state(page)).teaching, { timeout: 15_000 }).toBe('zigzag');
 
 	await draw(page, 'circle'); // the wrong shape fizzles
@@ -40,7 +40,7 @@ test('easy mode teaches a square for the jellyfish, not a swirl', async ({ page 
 	await page.clock.install();
 	await page.goto('/');
 	await page.getByLabel('Play', { exact: true }).click();
-	await page.getByRole('button', { name: 'Easy' }).click();
+	await page.getByRole('button', { name: 'Endless' }).click();
 	await page.clock.runFor(8000);
 	expect((await state(page)).teaching).toBe('zigzag');
 	await draw(page, 'zigzag');
@@ -61,7 +61,7 @@ test('hard mode has 3 hearts and a game over, then a retry', async ({ page }) =>
 	await page.clock.install();
 	await page.goto('/');
 	await page.getByLabel('Play', { exact: true }).click();
-	await page.getByRole('button', { name: 'Hard' }).click();
+	await page.getByRole('button', { name: 'Challenge' }).click();
 	expect((await state(page)).hearts).toBe(3);
 	// Draw nothing and let the creatures bump the squid.
 	await page.clock.runFor(90_000);
@@ -81,7 +81,7 @@ test('hard mode keeps going and speeds up every 10 friends', async ({ page }) =>
 	await page.clock.install();
 	await page.goto('/');
 	await page.getByLabel('Play', { exact: true }).click();
-	await page.getByRole('button', { name: 'Hard' }).click();
+	await page.getByRole('button', { name: 'Challenge' }).click();
 	const start = await state(page);
 	expect(start.wave).toBe(1);
 	while ((await state(page)).friends < 10) {
@@ -129,7 +129,7 @@ test('wave 3 ends with the kraken: the others swim off and it takes 3 spells', a
 	await page.clock.install();
 	await page.goto('/');
 	await page.getByLabel('Play', { exact: true }).click();
-	await page.getByRole('button', { name: 'Easy' }).click();
+	await page.getByRole('button', { name: 'Endless' }).click();
 	for (;;) {
 		await page.clock.runFor(500);
 		const now = await state(page);

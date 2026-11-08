@@ -302,7 +302,7 @@
 							stroke-linecap="round"
 						/>
 					</svg>
-					Easy
+					Endless
 				</button>
 				<button class="block mode hard" onclick={() => play('hard')}>
 					<span class="hearts" aria-hidden="true">
@@ -310,7 +310,7 @@
 							<svg viewBox="0 0 24 24"><path d={HEART} fill="currentColor" /></svg>
 						{/each}
 					</span>
-					Hard
+					Challenge
 				</button>
 			</div>
 			<button class="back" onclick={() => (chosen = false)} aria-label="Back">
