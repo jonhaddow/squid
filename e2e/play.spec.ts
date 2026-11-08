@@ -19,7 +19,7 @@ test('the first creature waits to be taught, then a drawn zap makes it a friend'
 	page
 }) => {
 	await page.goto('/');
-	await page.getByLabel('Play as squid 1').click();
+	await page.getByLabel('Play', { exact: true }).click();
 	await page.getByRole('button', { name: 'Easy' }).click();
 	await expect.poll(async () => (await state(page)).teaching, { timeout: 15_000 }).toBe('zigzag');
 
@@ -39,7 +39,7 @@ test('the first creature waits to be taught, then a drawn zap makes it a friend'
 test('easy mode teaches a square for the jellyfish, not a swirl', async ({ page }) => {
 	await page.clock.install();
 	await page.goto('/');
-	await page.getByLabel('Play as squid 1').click();
+	await page.getByLabel('Play', { exact: true }).click();
 	await page.getByRole('button', { name: 'Easy' }).click();
 	await page.clock.runFor(8000);
 	expect((await state(page)).teaching).toBe('zigzag');
@@ -60,7 +60,7 @@ test('hard mode has 3 hearts and a game over, then a retry', async ({ page }) =>
 	);
 	await page.clock.install();
 	await page.goto('/');
-	await page.getByLabel('Play as squid 1').click();
+	await page.getByLabel('Play', { exact: true }).click();
 	await page.getByRole('button', { name: 'Hard' }).click();
 	expect((await state(page)).hearts).toBe(3);
 	// Draw nothing and let the creatures bump the squid.
@@ -80,7 +80,7 @@ test('hard mode keeps going and speeds up every 10 friends', async ({ page }) =>
 	);
 	await page.clock.install();
 	await page.goto('/');
-	await page.getByLabel('Play as squid 1').click();
+	await page.getByLabel('Play', { exact: true }).click();
 	await page.getByRole('button', { name: 'Hard' }).click();
 	const start = await state(page);
 	expect(start.wave).toBe(1);
@@ -92,6 +92,29 @@ test('hard mode keeps going and speeds up every 10 friends', async ({ page }) =>
 	const now = await state(page);
 	expect(now).toMatchObject({ wave: 2, over: false });
 	expect(now.speed).toBeGreaterThan(start.speed);
+	// The best hard game so far is saved, for the leaderboard.
+	const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('squid-spells-v1')!)[0]);
+	expect(saved.best).toBeGreaterThanOrEqual(10);
+});
+
+test('the start screen posts the best game and shows the leaderboard', async ({ page }) => {
+	await page.addInitScript(() =>
+		localStorage.setItem('squid-spells-v1', JSON.stringify([{ name: 'Inky', best: 14 }]))
+	);
+	const posted: unknown[] = [];
+	await page.route('/api/scores', (route) => {
+		posted.push(route.request().postDataJSON());
+		return route.fulfill({
+			json: [
+				{ name: 'Inky', color: '#b45cff', best: 14, me: true },
+				{ name: 'Blub', color: '#ff7a3d', best: 9, me: false }
+			]
+		});
+	});
+	await page.goto('/');
+	const board = page.getByRole('list', { name: 'High scores' });
+	await expect(board.getByRole('listitem')).toHaveText([/Inky\s*14/, /Blub\s*9/]);
+	expect(posted[0]).toMatchObject({ name: 'Inky', best: 14, color: '#b45cff' });
 });
 
 test('wave 3 ends with the kraken: the others swim off and it takes 3 spells', async ({ page }) => {
@@ -105,7 +128,7 @@ test('wave 3 ends with the kraken: the others swim off and it takes 3 spells', a
 	);
 	await page.clock.install();
 	await page.goto('/');
-	await page.getByLabel('Play as squid 1').click();
+	await page.getByLabel('Play', { exact: true }).click();
 	await page.getByRole('button', { name: 'Easy' }).click();
 	for (;;) {
 		await page.clock.runFor(500);

@@ -9,31 +9,33 @@
 	import type { Mode } from '#lib/game/gestures.ts';
 	import type { Thing } from '#lib/game/sprites.ts';
 	import {
-		COLORS,
 		FACES,
 		HATS,
-		loadPlayers,
+		loadPlayer,
 		NAME_MAX,
 		NECKS,
 		newPlayer,
 		PALETTE,
-		savePlayers,
+		savePlayer,
 		type Hat,
-		type Look,
-		type Player
+		type Look
 	} from '#lib/game/progress.ts';
+	import { syncScores, type Row } from '#lib/scores.ts';
 
-	let players = $state<Player[]>([]);
-	/** The squid tapped on the start screen, now choosing easy or hard. */
-	let chosen = $state<number | null>(null);
-	/** The squid in the dressing room, choosing a colour and things to wear. */
-	let dressing = $state<number | null>(null);
+	/** The device's one squid. Fresh until the save loads, and not shown till then. */
+	let player = $state(newPlayer());
+	let loaded = $state(false);
+	/** The squid's been tapped on the start screen: choosing easy or hard. */
+	let chosen = $state(false);
+	/** In the dressing room, choosing a colour and things to wear. */
+	let dressing = $state(false);
+	/** The family leaderboard, once it's loaded (it stays empty offline). */
+	let board = $state<Row[]>([]);
 	let width = $state(800);
 	let height = $state(400);
 	/** The big squid in the dressing room. */
 	const mirror = $derived(Math.round(Math.min(340, height * 0.8, width * 0.32)));
-	/** Which kid is playing, or null on the start screen. */
-	let playing = $state<number | null>(null);
+	let playing = $state(false);
 	let mode = $state<Mode>('easy');
 	/** Hard mode ran out of hearts. Both modes are endless otherwise. */
 	let ended = $state(false);
@@ -44,7 +46,8 @@
 	let updated = $state(false);
 
 	onMount(() => {
-		players = loadPlayers(localStorage);
+		player = loadPlayer(localStorage);
+		loaded = true;
 		const query = matchMedia('(orientation: portrait)');
 		portrait = query.matches;
 		const change = () => (portrait = query.matches);
@@ -87,9 +90,22 @@
 		};
 	});
 
+	const home = $derived(!playing && !chosen && !dressing);
+
 	// Never mid-game: only on the start screen (progress is already saved).
 	$effect(() => {
-		if (updated && playing === null && chosen === null && dressing === null) location.reload();
+		if (updated && home) location.reload();
+	});
+
+	// Each time the start screen shows: post the squid's best and fetch the board.
+	$effect(() => {
+		// After the save loads, so it posts this squid's best, not a fresh one's.
+		if (!home || !loaded) return;
+		let live = true;
+		void syncScores(untrack(() => $state.snapshot(player))).then((rows) => {
+			if (live && rows) board = rows;
+		});
+		return () => (live = false);
 	});
 
 	/** The dressing room's rows of things to wear, after the colours. */
@@ -102,32 +118,31 @@
 	const HEART =
 		'M12 21C5 15.5 2 12.3 2 8.5A4.8 4.8 0 0 1 12 6a4.8 4.8 0 0 1 10 2.5c0 3.8-3 7-10 12.5z';
 
-	const save = () => savePlayers(localStorage, $state.snapshot(players));
+	const save = () => savePlayer(localStorage, $state.snapshot(player));
 
-	function pick(i: number) {
+	function pick() {
 		unlock();
 		sounds.pop();
-		chosen = i;
+		chosen = true;
 	}
 
 	function play(m: Mode) {
 		sounds.friend();
 		mode = m;
 		ended = false;
-		playing = chosen;
-		chosen = null;
+		playing = true;
+		chosen = false;
 	}
 
-	function dress(i: number) {
+	function dress() {
 		unlock();
 		sounds.pop();
-		dressing = i;
+		dressing = true;
 	}
 
 	function wear(change: Partial<Look>) {
-		if (dressing === null) return;
 		sounds.pop();
-		Object.assign(players[dressing], change);
+		Object.assign(player, change);
 		save();
 	}
 
@@ -137,14 +152,14 @@
 		round++;
 	}
 
-	function home() {
+	function quit() {
 		sounds.pop();
 		ended = false;
-		playing = null;
+		playing = false;
 	}
 
 	/** Runs the game on the canvas while it's on screen. */
-	function run(player: Player) {
+	function run() {
 		return (canvas: HTMLCanvasElement) => {
 			// Untracked: the game changes the player as it goes (stars, level), which
 			// mustn't restart it. A retry restarts it through `round`.
@@ -198,8 +213,7 @@
 {/snippet}
 
 <main>
-	{#if playing === null && dressing !== null}
-		{@const player = players[dressing]}
+	{#if !playing && dressing}
 		<section class="dress">
 			<div class="me">
 				<div class="mirror" style:--squid={player.color}>
@@ -262,13 +276,13 @@
 					</div>
 				{/each}
 			</div>
-			<button class="back" onclick={() => (dressing = null)} aria-label="Done">
+			<button class="back" onclick={() => (dressing = false)} aria-label="Done">
 				<svg viewBox="0 0 24 24" aria-hidden="true"
 					><path d="M15 4l-8 8 8 8" fill="none" stroke="currentColor" stroke-width="3" /></svg
 				>
 			</button>
 		</section>
-	{:else if playing === null && chosen !== null}
+	{:else if !playing && chosen}
 		<section class="start">
 			<div class="modes">
 				<button class="block mode easy" onclick={() => play('easy')}>
@@ -295,25 +309,19 @@
 					Hard
 				</button>
 			</div>
-			<button class="back" onclick={() => (chosen = null)} aria-label="Back">
+			<button class="back" onclick={() => (chosen = false)} aria-label="Back">
 				<svg viewBox="0 0 24 24" aria-hidden="true"
 					><path d="M15 4l-8 8 8 8" fill="none" stroke="currentColor" stroke-width="3" /></svg
 				>
 			</button>
 		</section>
-	{:else if playing === null}
+	{:else if !playing}
 		<section class="start">
 			<h1>Squid Spells</h1>
-			<div class="squids">
-				{#each players as player, i (i)}
+			{#if loaded}
+				<div class="squids">
 					<div class="slot">
-						<button
-							class="pick"
-							onclick={() => pick(i)}
-							aria-label="Play as squid {i + 1}"
-							style:--squid={player.color}
-						>
-							{#if player.name}<span class="label">{player.name}</span>{/if}
+						<button class="pick" onclick={pick} aria-label="Play" style:--squid={player.color}>
 							<SquidPreview look={player} />
 							<span class="stars" aria-label="{player.stars} stars">
 								<svg viewBox="0 0 24 24" aria-hidden="true"
@@ -324,7 +332,7 @@
 								{player.stars}
 							</span>
 						</button>
-						<button class="block wardrobe" onclick={() => dress(i)} aria-label="Dress up">
+						<button class="block wardrobe" onclick={dress} aria-label="Dress up">
 							<!-- A T-shirt. -->
 							<svg viewBox="0 0 24 24" aria-hidden="true"
 								><path
@@ -333,16 +341,29 @@
 								/></svg
 							>
 						</button>
+						{#if player.name}<p class="label">{player.name}</p>{/if}
 					</div>
-				{/each}
-			</div>
+					{#if board.length}
+						<!-- The family leaderboard: best hard-mode game, a row per device. -->
+						<ol class="board" aria-label="High scores">
+							{#each board as row, i (i)}
+								<li class:me={row.me} style:--squid={row.color}>
+									<span class="blob" aria-hidden="true"></span>
+									<span class="who">{row.name || '?'}</span>
+									<span class="score">{row.best}</span>
+								</li>
+							{/each}
+						</ol>
+					{/if}
+				</div>
+			{/if}
 			<InstallHint />
 		</section>
 	{:else}
 		{#key round}
-			<canvas class="game" {@attach run(players[playing])}></canvas>
+			<canvas class="game" {@attach run()}></canvas>
 		{/key}
-		<button class="block corner" onclick={home} aria-label="Home">
+		<button class="block corner" onclick={quit} aria-label="Home">
 			<svg viewBox="0 0 24 24" aria-hidden="true"
 				><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z" fill="currentColor" /></svg
 			>
@@ -351,7 +372,7 @@
 			<div class="done">
 				<p class="cheer">Oh no!</p>
 				<div class="row">
-					<button class="block big" onclick={home} aria-label="Home">
+					<button class="block big" onclick={quit} aria-label="Home">
 						<svg viewBox="0 0 24 24" aria-hidden="true"
 							><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z" fill="currentColor" /></svg
 						>
@@ -377,10 +398,7 @@
 			<div class="phone">
 				<!-- Only while it shows: its animation would cost frames during play. -->
 				{#if portrait}
-					<SquidPreview
-						look={players[playing ?? dressing ?? 0] ?? newPlayer(COLORS[0])}
-						size={96}
-					/>
+					<SquidPreview look={player} size={96} />
 				{/if}
 			</div>
 			<svg class="arrow" viewBox="0 0 100 100" aria-hidden="true">
@@ -423,6 +441,7 @@
 
 	.squids {
 		display: flex;
+		align-items: center;
 		gap: 6vw;
 	}
 
@@ -441,9 +460,6 @@
 			0 0 0 4px var(--ink),
 			0 0 30px color-mix(in srgb, var(--squid) 60%, transparent);
 		animation: float 3s ease-in-out infinite;
-	}
-	.slot:nth-child(2) .pick {
-		animation-delay: -1.5s;
 	}
 	.pick:active {
 		transform: scale(0.95);
@@ -556,9 +572,48 @@
 		border-color: var(--gold);
 	}
 	.label {
-		font-size: 28px;
+		margin: 2vh 0 0;
+		text-align: center;
+		font-size: clamp(24px, 8vh, 44px);
 		color: var(--gold);
-		text-shadow: 0 3px 0 var(--violet);
+		text-shadow: 0 4px 0 var(--violet);
+	}
+
+	.board {
+		margin: 0;
+		padding: 10px 14px;
+		list-style: none;
+		display: grid;
+		gap: 4px;
+		min-width: min(34vw, 260px);
+		background: rgba(255, 255, 255, 0.06);
+		border: 4px solid var(--ink);
+		font-size: clamp(18px, 6vh, 28px);
+	}
+	.board li {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 2px 8px;
+		border: 3px solid transparent;
+	}
+	.board .me {
+		border-color: var(--gold);
+		background: rgba(255, 224, 102, 0.15);
+	}
+	.blob {
+		flex: none;
+		width: 0.9em;
+		height: 0.9em;
+		border-radius: 50%;
+		background: var(--squid);
+		box-shadow: 0 0 0 3px var(--ink);
+	}
+	.who {
+		flex: 1;
+	}
+	.score {
+		color: var(--gold);
 	}
 	.mirror {
 		background: rgba(255, 255, 255, 0.06);
