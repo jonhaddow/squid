@@ -1,6 +1,6 @@
 // Each kid's squid and how far they've got, kept in the browser (localStorage).
 // Pure apart from the storage passed in, so it's unit tested.
-import { SHAPES, type Shape } from './gestures.ts';
+import { SHAPES, type Mode, type Shape } from './gestures.ts';
 
 export const HATS = ['wizard', 'crown', 'pirate', 'party', 'top', 'flower'] as const;
 export type Hat = (typeof HATS)[number];
@@ -8,8 +8,10 @@ export type Hat = (typeof HATS)[number];
 export type Player = {
 	/** Body colour of their squid. */
 	color: string;
-	/** The level they're on, from 1. */
+	/** The level they're on in easy mode, from 1. */
 	level: number;
+	/** And in hard mode, which counts separately. */
+	hardLevel: number;
 	stars: number;
 	hats: Hat[];
 	hat: Hat | null;
@@ -23,7 +25,7 @@ export const COLORS = ['#b45cff', '#ff7a3d'];
 const KEY = 'squid-spells-v1';
 
 export function newPlayer(color: string): Player {
-	return { color, level: 1, stars: 0, hats: [], hat: null, learned: [], ease: 1 };
+	return { color, level: 1, hardLevel: 1, stars: 0, hats: [], hat: null, learned: [], ease: 1 };
 }
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
@@ -47,14 +49,18 @@ export function savePlayers(store: Store, players: Player[]) {
 	}
 }
 
+export const levelOf = (player: Player, mode: Mode) =>
+	mode === 'hard' ? player.hardLevel : player.level;
+
 /** After a level: the next hat (worn straight away) and on to the next level. */
-export function finishLevel(player: Player): Hat | null {
+export function finishLevel(player: Player, mode: Mode): Hat | null {
 	const hat = HATS.find((h) => !player.hats.includes(h)) ?? null;
 	if (hat) {
 		player.hats.push(hat);
 		player.hat = hat;
 	}
-	player.level++;
+	if (mode === 'hard') player.hardLevel++;
+	else player.level++;
 	return hat;
 }
 
@@ -81,17 +87,21 @@ export type Plan = {
 	crowd: number;
 };
 
-export function planLevel(level: number, ease: number, random = Math.random): Plan {
+/** Hard mode doesn't adjust to misses: it's this fast, always. */
+export const HARD_EASE = 1.3;
+
+export function planLevel(level: number, ease: number, mode: Mode, random = Math.random): Plan {
+	const shapes = SHAPES[mode];
 	const creatures: Shape[] = [];
 	// Level 1 starts with one of each, one at a time, so each can be taught.
-	if (level === 1) creatures.push(...SHAPES);
+	if (level === 1) creatures.push(...shapes);
 	const count = 4 + level * 2;
-	while (creatures.length < count) creatures.push(SHAPES[Math.floor(random() * SHAPES.length)]);
+	while (creatures.length < count) creatures.push(shapes[Math.floor(random() * shapes.length)]);
 	const speed = (1 + (level - 1) * 0.12) * ease;
 	return {
 		creatures,
 		crossing: 16 / speed,
 		gap: Math.max(1.5, 5 - level * 0.4) / ease,
-		crowd: Math.min(4, 1 + Math.floor(level / 2))
+		crowd: Math.min(4, 1 + Math.floor(level / 2) + (mode === 'hard' ? 1 : 0))
 	};
 }

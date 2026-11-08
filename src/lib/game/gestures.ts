@@ -1,12 +1,18 @@
-// Tells which spell shape a finger drew: a circle (shield), a zigzag (zap) or
-// a swirl (bubbles). Forgiving on purpose: a 6 year old's wobbly circle counts.
+// Tells which spell shape a finger drew: a circle (shield), a zigzag (zap), a
+// swirl (bubbles, hard mode) or a line (bubbles, easy mode). Forgiving on purpose: a 6 year old's wobbly circle counts.
 // It works on how much the line turns overall, so size, speed, direction and
 // where on the screen it was drawn don't matter.
 
-export type Shape = 'circle' | 'zigzag' | 'swirl';
+export type Shape = 'circle' | 'zigzag' | 'swirl' | 'line';
 export type Point = { x: number; y: number };
 
-export const SHAPES: Shape[] = ['zigzag', 'swirl', 'circle'];
+export type Mode = 'easy' | 'hard';
+
+/** The shapes each mode uses: easy swaps the swirl for a straight line. */
+export const SHAPES: Record<Mode, Shape[]> = {
+	easy: ['zigzag', 'line', 'circle'],
+	hard: ['zigzag', 'swirl', 'circle']
+};
 
 /** Strokes smaller than this (CSS px across) are taps, not shapes. */
 const MIN_SIZE = 40;
@@ -83,6 +89,20 @@ function reversals(values: number[], min: number): number {
 	return count;
 }
 
+/** Never strays far from the straight line between its ends: a line, any direction. */
+function isLine(points: Point[]): boolean {
+	const a = points[0];
+	const b = points[points.length - 1];
+	const ends = Math.hypot(b.x - a.x, b.y - a.y);
+	if (ends < 60) return false;
+	let furthest = 0;
+	for (const p of points) {
+		const off = Math.abs((b.x - a.x) * (a.y - p.y) - (a.x - p.x) * (b.y - a.y)) / ends;
+		furthest = Math.max(furthest, off);
+	}
+	return furthest / ends < 0.18;
+}
+
 export function classify(raw: Point[]): Shape | null {
 	if (raw.length < 4) return null;
 	const xs = raw.map((p) => p.x);
@@ -91,6 +111,7 @@ export function classify(raw: Point[]): Shape | null {
 	if (size < MIN_SIZE) return null;
 
 	const points = resample(raw);
+	if (isLine(raw)) return 'line';
 	const loops = Math.abs(netTurning(points)) / (2 * Math.PI);
 	if (loops >= 1.6) return 'swirl';
 	if (loops >= 0.65) return 'circle';
@@ -114,6 +135,8 @@ export function guide(shape: Shape, n = 60): Point[] {
 		if (shape === 'circle') {
 			const a = -Math.PI / 2 + t * Math.PI * 2;
 			out.push({ x: 0.5 + 0.5 * Math.cos(a), y: 0.5 + 0.5 * Math.sin(a) });
+		} else if (shape === 'line') {
+			out.push({ x: 0.1 + 0.8 * t, y: 0.5 });
 		} else if (shape === 'swirl') {
 			const a = t * Math.PI * 4.4;
 			const r = 0.08 + 0.42 * t;

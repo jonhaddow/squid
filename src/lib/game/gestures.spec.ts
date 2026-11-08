@@ -25,6 +25,13 @@ describe('classify', () => {
 		expect(classify(draw(guide('circle')))).toBe('circle');
 		expect(classify(draw(guide('swirl')))).toBe('swirl');
 		expect(classify(draw(guide('zigzag')))).toBe('zigzag');
+		expect(classify(draw(guide('line')))).toBe('line');
+	});
+
+	it('accepts a wobbly line in any direction', () => {
+		const down: Point[] = [0, 0.25, 0.5, 0.75, 1].map((y, i) => ({ x: 0.5 + (i % 2) * 0.05, y }));
+		expect(classify(draw(down, 200, 6))).toBe('line');
+		expect(classify(draw([...guide('line')].reverse(), 150, 4))).toBe('line');
 	});
 
 	it('accepts wobbly circles, either way round, overshooting or a bit short', () => {
@@ -51,14 +58,14 @@ describe('classify', () => {
 		for (const shape of [down, across, n]) expect(classify(draw(shape, 180, 5))).toBe('zigzag');
 	});
 
-	it('ignores taps, lines and squiggles', () => {
+	it('ignores taps, short strokes and squiggles', () => {
 		expect(classify([{ x: 10, y: 10 }])).toBeNull();
 		expect(classify(draw(arc(1), 20))).toBeNull();
-		const line: Point[] = [
+		const short: Point[] = [
 			{ x: 0, y: 0 },
-			{ x: 1, y: 0.2 }
+			{ x: 0.2, y: 0 }
 		];
-		expect(classify(draw(line))).toBeNull();
+		expect(classify(draw(short))).toBeNull();
 		const v: Point[] = [
 			{ x: 0, y: 0 },
 			{ x: 0.5, y: 1 },
