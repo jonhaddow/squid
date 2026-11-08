@@ -2,18 +2,28 @@
 // shape it needs. Draw that shape anywhere and the squid's spell makes it a
 // friend. In easy mode nothing hurts: a creature that reaches the squid just
 // bumps it and backs off. Hard mode is faster, has 3 hearts and a game over,
-// and doesn't go easier after misses. Level 1 stops each new kind of creature and shows a finger
-// drawing its shape until the child copies it.
+// and doesn't go easier after misses. Both are endless: every WAVE friends wins
+// a hat and things speed up a little (to a limit). A creature the child hasn't
+// cast yet stops, and a finger draws its shape until the child copies it.
 import { sounds, say, unlock } from './audio.ts';
-import { classify, guide, isAttempt, type Mode, type Point, type Shape } from './gestures.ts';
+import {
+	classify,
+	guide,
+	isAttempt,
+	SHAPES,
+	type Mode,
+	type Point,
+	type Shape
+} from './gestures.ts';
 import {
 	befriended,
-	finishLevel,
+	finishWave,
+	firstCreatures,
 	HARD_EASE,
-	levelOf,
 	missed,
-	planLevel,
-	type Hat,
+	planWave,
+	TOP_WAVE,
+	WAVE,
 	type Player
 } from './progress.ts';
 import * as art from './sprites.ts';
@@ -47,8 +57,6 @@ type Bit = {
 export type Events = {
 	/** Progress changed: save it. */
 	save(): void;
-	/** Every creature is a friend. `hat` is the one just won, if any. */
-	levelDone(hat: Hat | null): void;
 	/** Hard mode: out of hearts. */
 	gameOver(): void;
 };
@@ -74,20 +82,21 @@ export class Game {
 	private trail: Point[] = [];
 	private drawing = false;
 
+	private wave: number;
+	/** Shapes to send first, then they're random. */
 	private queue: Shape[];
-	private total: number;
 	private friends = 0;
 	private spawnIn = 1;
-	private gap: number;
-	private crowd: number;
-	private levelSpeed: number;
+	private gap = 0;
+	private crowd = 0;
+	private waveSpeed = 0;
 	/** Misses in a row: after 3, any real attempt counts and the finger shows again. */
 	private misses = 0;
 	private spin = 0;
 	private flash = 0;
-	private finished = false;
 	private over = false;
-	private celebrateIn = -1;
+	/** Seconds of confetti left after a wave. */
+	private party = 0;
 	private hearts = HEARTS;
 	/** Seconds the lost heart flashes in the corner. */
 	private hurt = 0;
@@ -101,13 +110,17 @@ export class Game {
 		private events: Events
 	) {
 		this.ctx = canvas.getContext('2d')!;
-		const plan = planLevel(levelOf(player, mode), 1, mode);
-		this.queue = plan.creatures;
-		this.total = plan.creatures.length;
+		this.wave = mode === 'hard' ? 1 : player.level;
+		this.queue = firstCreatures(this.wave, mode);
+		this.plan();
+		this.resize();
+	}
+
+	private plan() {
+		const plan = planWave(this.wave, this.mode);
 		this.gap = plan.gap;
 		this.crowd = plan.crowd;
-		this.levelSpeed = 16 / plan.crossing;
-		this.resize();
+		this.waveSpeed = plan.speed;
 	}
 
 	start() {
@@ -144,10 +157,10 @@ export class Game {
 	get state() {
 		return {
 			friends: this.friends,
-			total: this.total,
+			wave: this.wave,
+			speed: this.waveSpeed * this.ease,
 			creatures: this.mobs.filter((m) => m.state !== 'happy').map((m) => m.shape),
 			teaching: this.teaching()?.shape ?? null,
-			finished: this.finished,
 			hearts: this.mode === 'hard' ? this.hearts : null,
 			over: this.over
 		};
@@ -166,7 +179,7 @@ export class Game {
 		return this.mode === 'hard' ? HARD_EASE : this.player.ease;
 	}
 	private get speed() {
-		return (this.w * 0.86 * this.levelSpeed * this.ease) / 16;
+		return (this.w * 0.86 * this.waveSpeed * this.ease) / 16;
 	}
 
 	/** A creature whose shape the child hasn't cast yet waits, and the finger shows how. */
@@ -202,7 +215,7 @@ export class Game {
 		this.drawing = false;
 		const trail = this.trail;
 		this.trail = [];
-		if (this.finished || this.over) return;
+		if (this.over) return;
 		const shape = classify(trail);
 		if (!shape && !isAttempt(trail)) {
 			// A tap: just bubbles.
@@ -259,9 +272,10 @@ export class Game {
 		this.spawnIn -= dt;
 		const swimming = this.mobs.filter((b) => b.state !== 'happy').length;
 		const teaching = this.teaching() !== undefined;
-		if (this.queue.length && this.spawnIn <= 0 && swimming < this.crowd && !teaching) {
+		if (!this.over && this.spawnIn <= 0 && swimming < this.crowd && !teaching) {
+			const shapes = SHAPES[this.mode];
 			this.mobs.push({
-				shape: this.queue.shift()!,
+				shape: this.queue.shift() ?? shapes[Math.floor(Math.random() * shapes.length)],
 				x: this.w + m,
 				y: this.h * (0.22 + Math.random() * 0.48),
 				phase: Math.random() * 10,
@@ -335,13 +349,8 @@ export class Game {
 				color: 'rgba(191,243,255,0.5)'
 			});
 
-		if (!this.finished && !this.over && this.friends === this.total && this.celebrateIn < 0)
-			this.celebrateIn = 0.8;
-		if (this.celebrateIn > 0) {
-			this.celebrateIn -= dt;
-			if (this.celebrateIn <= 0) this.celebrate();
-		}
-		if (this.finished && Math.random() < 0.5)
+		this.party = Math.max(0, this.party - dt);
+		if (this.party && Math.random() < 0.5)
 			this.burst({ x: Math.random() * this.w, y: -10 }, 'confetti', 2, '');
 	}
 
@@ -370,6 +379,7 @@ export class Game {
 			color: '#ffe066'
 		});
 		sounds.friend();
+		if (this.friends % WAVE === 0) this.nextWave();
 		this.events.save();
 	}
 
@@ -378,20 +388,21 @@ export class Game {
 		this.hurt = 1;
 		if (this.hearts > 0) return;
 		this.over = true;
-		this.queue = [];
 		sounds.fizzle();
 		say('Oh no! Try again!');
 		this.events.gameOver();
 	}
 
-	private celebrate() {
-		this.finished = true;
-		const hat = finishLevel(this.player, this.mode);
-		this.events.save();
+	/** A wave of friends: a hat, a party, and on to the next (a bit faster) wave. */
+	private nextWave() {
+		const hat = finishWave(this.player, this.mode);
+		this.wave++;
+		this.plan();
+		this.party = 2.5;
 		sounds.fanfare();
-		say(hat ? 'You did it! A new hat!' : 'You did it!');
+		const faster = this.mode === 'hard' && this.wave <= TOP_WAVE;
+		say(hat ? 'A new hat!' : faster ? 'Faster!' : 'Well done!');
 		this.burst({ x: this.w / 2, y: this.h * 0.4 }, 'confetti', 80, '');
-		this.events.levelDone(hat);
 	}
 
 	private burst(p: Point, kind: Bit['kind'], n: number, color: string) {
@@ -447,7 +458,7 @@ export class Game {
 		ctx.save();
 		ctx.translate(squid.x, squid.y);
 		if (this.spin) ctx.rotate(this.spin * Math.PI * 4);
-		if (this.finished) ctx.rotate(Math.sin(this.t * 6) * 0.15);
+		if (this.party) ctx.rotate(Math.sin(this.t * 6) * 0.15);
 		art.drawSquid(ctx, squid.s, { color: this.player.color, hat: this.player.hat, t: this.t });
 		ctx.restore();
 
@@ -605,14 +616,15 @@ export class Game {
 				ctx.restore();
 			}
 
-		// One dot per creature in the level, filled in as they become friends.
-		const r = Math.min(9, (w * 0.4) / this.total / 2.6);
+		// One dot per creature in the wave, filled in as they become friends.
+		const r = 9;
 		const gap = r * 2.6;
-		const left = w / 2 - ((this.total - 1) * gap) / 2;
-		for (let i = 0; i < this.total; i++) {
+		const left = w / 2 - ((WAVE - 1) * gap) / 2;
+		const done = this.friends % WAVE;
+		for (let i = 0; i < WAVE; i++) {
 			ctx.beginPath();
 			ctx.arc(left + i * gap, 30, r, 0, Math.PI * 2);
-			ctx.fillStyle = i < this.friends ? '#ffe066' : 'rgba(255,255,255,0.2)';
+			ctx.fillStyle = i < done ? '#ffe066' : 'rgba(255,255,255,0.2)';
 			ctx.fill();
 		}
 	}

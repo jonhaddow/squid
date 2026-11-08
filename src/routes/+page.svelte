@@ -5,7 +5,7 @@
 	import { unlock, sounds } from '#lib/game/audio.ts';
 	import { Game, HEARTS } from '#lib/game/game.ts';
 	import type { Mode } from '#lib/game/gestures.ts';
-	import { loadPlayers, nextHat, savePlayers, type Hat, type Player } from '#lib/game/progress.ts';
+	import { loadPlayers, nextHat, savePlayers, type Player } from '#lib/game/progress.ts';
 
 	let players = $state<Player[]>([]);
 	/** The squid tapped on the start screen, now choosing easy or hard. */
@@ -13,9 +13,9 @@
 	/** Which kid is playing, or null on the start screen. */
 	let playing = $state<number | null>(null);
 	let mode = $state<Mode>('easy');
-	/** How the level ended: all friends (and maybe a new hat), or out of hearts. */
-	let ended = $state<{ won: true; hat: Hat | null } | { won: false } | null>(null);
-	/** Bumped to restart the game: the next level, or a retry. */
+	/** Hard mode ran out of hearts. Both modes are endless otherwise. */
+	let ended = $state(false);
+	/** Bumped to restart the game for a retry. */
 	let round = $state(0);
 	let portrait = $state(false);
 	/** A new version has taken over: reload into it when nobody's mid-game. */
@@ -65,7 +65,7 @@
 		};
 	});
 
-	// Never mid-level: only on the start screen (progress is already saved).
+	// Never mid-game: only on the start screen (progress is already saved).
 	$effect(() => {
 		if (updated && playing === null && chosen === null) location.reload();
 	});
@@ -84,7 +84,7 @@
 	function play(m: Mode) {
 		sounds.friend();
 		mode = m;
-		ended = null;
+		ended = false;
 		playing = chosen;
 		chosen = null;
 	}
@@ -98,13 +98,13 @@
 
 	function again() {
 		sounds.pop();
-		ended = null;
+		ended = false;
 		round++;
 	}
 
 	function home() {
 		sounds.pop();
-		ended = null;
+		ended = false;
 		playing = null;
 	}
 
@@ -112,13 +112,12 @@
 	function run(player: Player) {
 		return (canvas: HTMLCanvasElement) => {
 			// Untracked: the game changes the player as it goes (stars, level), which
-			// mustn't restart it. A new level restarts it through `round`.
+			// mustn't restart it. A retry restarts it through `round`.
 			const game = untrack(
 				() =>
 					new Game(canvas, player, mode, {
 						save,
-						levelDone: (hat) => (ended = { won: true, hat }),
-						gameOver: () => (ended = { won: false })
+						gameOver: () => (ended = true)
 					})
 			);
 			window.__squid = game;
@@ -229,29 +228,21 @@
 		</button>
 		{#if ended}
 			<div class="done">
-				<p class="cheer">{ended.won ? 'You did it!' : 'Oh no!'}</p>
+				<p class="cheer">Oh no!</p>
 				<div class="row">
 					<button class="block big" onclick={home} aria-label="Home">
 						<svg viewBox="0 0 24 24" aria-hidden="true"
 							><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z" fill="currentColor" /></svg
 						>
 					</button>
-					<button
-						class="block big go"
-						onclick={again}
-						aria-label={ended.won ? 'Next level' : 'Try again'}
-					>
+					<button class="block big go" onclick={again} aria-label="Try again">
 						<svg viewBox="0 0 24 24" aria-hidden="true">
-							{#if ended.won}
-								<path d="M7 4l13 8-13 8z" fill="currentColor" />
-							{:else}
-								<path
-									d="M19 12a7 7 0 1 1-2.1-5M19 3v5h-5"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="3"
-								/>
-							{/if}
+							<path
+								d="M19 12a7 7 0 1 1-2.1-5M19 3v5h-5"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="3"
+							/>
 						</svg>
 					</button>
 				</div>

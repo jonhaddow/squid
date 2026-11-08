@@ -8,10 +8,8 @@ export type Hat = (typeof HATS)[number];
 export type Player = {
 	/** Body colour of their squid. */
 	color: string;
-	/** The level they're on in easy mode, from 1. */
+	/** The wave they're on in easy mode, from 1. Hard mode starts at 1 each game. */
 	level: number;
-	/** And in hard mode, which counts separately. */
-	hardLevel: number;
 	stars: number;
 	hats: Hat[];
 	hat: Hat | null;
@@ -25,7 +23,7 @@ export const COLORS = ['#b45cff', '#ff7a3d'];
 const KEY = 'squid-spells-v1';
 
 export function newPlayer(color: string): Player {
-	return { color, level: 1, hardLevel: 1, stars: 0, hats: [], hat: null, learned: [], ease: 1 };
+	return { color, level: 1, stars: 0, hats: [], hat: null, learned: [], ease: 1 };
 }
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
@@ -49,18 +47,14 @@ export function savePlayers(store: Store, players: Player[]) {
 	}
 }
 
-export const levelOf = (player: Player, mode: Mode) =>
-	mode === 'hard' ? player.hardLevel : player.level;
-
-/** After a level: the next hat (worn straight away) and on to the next level. */
-export function finishLevel(player: Player, mode: Mode): Hat | null {
+/** After each wave: the next hat (worn straight away), and easy mode remembers the wave. */
+export function finishWave(player: Player, mode: Mode): Hat | null {
 	const hat = HATS.find((h) => !player.hats.includes(h)) ?? null;
 	if (hat) {
 		player.hats.push(hat);
 		player.hat = hat;
 	}
-	if (mode === 'hard') player.hardLevel++;
-	else player.level++;
+	if (mode === 'easy') player.level++;
 	return hat;
 }
 
@@ -76,32 +70,32 @@ export function nextHat(player: Player): Hat | null {
 export const missed = (ease: number) => Math.max(0.5, +(ease - 0.1).toFixed(2));
 export const befriended = (ease: number) => Math.min(1.4, +(ease + 0.03).toFixed(2));
 
+// Both modes are endless: creatures keep coming in waves of WAVE friends.
+// Each wave is a bit faster and busier, up to TOP_WAVE, then stays there.
+export const WAVE = 10;
+export const TOP_WAVE = 7;
+
 export type Plan = {
-	/** The shape each creature needs, in the order they arrive. */
-	creatures: Shape[];
-	/** Seconds a creature takes to swim across the screen. */
-	crossing: number;
+	/** Speed relative to wave 1. */
+	speed: number;
 	/** Seconds between arrivals. */
 	gap: number;
 	/** Most creatures on screen at once. */
 	crowd: number;
 };
 
-/** Hard mode doesn't adjust to misses: it's this fast, always. */
+/** Hard mode doesn't adjust to misses: it's this much faster than easy, always. */
 export const HARD_EASE = 1.3;
 
-export function planLevel(level: number, ease: number, mode: Mode, random = Math.random): Plan {
-	const shapes = SHAPES[mode];
-	const creatures: Shape[] = [];
-	// Level 1 starts with one of each, one at a time, so each can be taught.
-	if (level === 1) creatures.push(...shapes);
-	const count = 4 + level * 2;
-	while (creatures.length < count) creatures.push(shapes[Math.floor(random() * shapes.length)]);
-	const speed = (1 + (level - 1) * 0.12) * ease;
+export function planWave(wave: number, mode: Mode): Plan {
+	const w = Math.min(wave, TOP_WAVE);
 	return {
-		creatures,
-		crossing: 16 / speed,
-		gap: Math.max(1.5, 5 - level * 0.4) / ease,
-		crowd: Math.min(4, 1 + Math.floor(level / 2) + (mode === 'hard' ? 1 : 0))
+		speed: 1 + (w - 1) * 0.12,
+		gap: Math.max(1.5, 5 - w * 0.4),
+		crowd: Math.min(4, 1 + Math.floor(w / 2) + (mode === 'hard' ? 1 : 0))
 	};
 }
+
+/** A fresh start meets one of each kind first, so each can be taught; then they're random. */
+export const firstCreatures = (wave: number, mode: Mode): Shape[] =>
+	wave === 1 ? [...SHAPES[mode]] : [];

@@ -71,6 +71,31 @@ test('hard mode has 3 hearts and a game over, then a retry', async ({ page }) =>
 	expect(await state(page)).toMatchObject({ hearts: 3, over: false });
 });
 
+test('hard mode keeps going and speeds up every 10 friends', async ({ page }) => {
+	await page.addInitScript(() =>
+		localStorage.setItem(
+			'squid-spells-v1',
+			JSON.stringify([{ learned: ['zigzag', 'swirl', 'circle', 'square'] }])
+		)
+	);
+	await page.clock.install();
+	await page.goto('/');
+	await page.getByLabel('Play as the purple squid').click();
+	await page.getByRole('button', { name: 'Hard' }).click();
+	const start = await state(page);
+	expect(start.wave).toBe(1);
+	while ((await state(page)).friends < 10) {
+		await page.clock.runFor(500);
+		const [next] = (await state(page)).creatures;
+		if (next) await draw(page, next);
+	}
+	const now = await state(page);
+	expect(now).toMatchObject({ wave: 2, over: false });
+	expect(now.speed).toBeGreaterThan(start.speed);
+	// No end screen: more creatures come.
+	await expect(page.getByText('Oh no!')).toBeHidden();
+});
+
 test('asks to turn the phone sideways in portrait', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/');
