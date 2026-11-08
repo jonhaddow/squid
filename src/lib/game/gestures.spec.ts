@@ -42,7 +42,7 @@ describe('classify', () => {
 			expect(classify(draw(half(0, 0.5), 160, 5, seed))).toBe('arch'); // a bowl
 			expect(classify(draw(half(Math.PI / 2, 0.5), 160, 5, seed))).toBe('arch'); // a C
 			expect(classify(draw(half(Math.PI, 0.4), 200, 4, seed))).toBe('arch');
-			expect(classify(draw(half(Math.PI * 0.9, 0.6), 200, 4, seed))).toBe('arch');
+			expect(classify(draw(half(Math.PI * 0.95, 0.55), 200, 4, seed))).toBe('arch');
 		}
 	});
 
@@ -64,7 +64,8 @@ describe('classify', () => {
 		for (let seed = 1; seed < 50; seed++) {
 			for (const shape of [v, l, line])
 				expect(classify(draw(shape, 200, 4, seed))).not.toBe('arch');
-			expect(classify(draw(arc(0.85), 200, 5, seed))).not.toBe('arch');
+			for (const turns of [0.7, 0.75, 0.85])
+				expect(classify(draw(arc(turns), 200, 5, seed))).not.toBe('arch');
 		}
 	});
 
@@ -185,6 +186,8 @@ describe('classify', () => {
 		expect(classify(draw(arc(-1), 150, 8))).toBe('circle');
 		expect(classify(draw(arc(1.3)))).toBe('circle');
 		expect(classify(draw(arc(0.8)))).toBe('circle');
+		expect(classify(draw(arc(0.7)))).toBe('circle');
+		expect(classify(draw(arc(0.75)))).toBe('circle');
 	});
 
 	it('tells a swirl from a circle', () => {

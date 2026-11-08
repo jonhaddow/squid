@@ -1,6 +1,7 @@
 // Tells which spell shape a finger drew: a circle (shield), a zigzag (zap), a
 // swirl (bubbles, hard mode), a square (bubbles, easy mode), a triangle
-// (fins) or a half circle, an arch (a rainbow, for the sea turtle). Forgiving on purpose: a 6 year old's wobbly circle counts.
+// (fins) or a half circle, an arch (a rainbow, for the sea turtle).
+// Forgiving on purpose: a 6 year old's wobbly circle counts.
 // It works on how much the line turns overall, so size, speed, direction and
 // where on the screen it was drawn don't matter.
 
@@ -183,7 +184,7 @@ export function classify(raw: Point[]): Shape | null {
 	const last = points[points.length - 1];
 	const gap = Math.hypot(last.x - first.x, last.y - first.y) / size;
 	const half = Math.abs(netTurning(resample(raw, 12))) / (2 * Math.PI);
-	if (half >= 0.25 && half < 0.72 && gap > 0.65 && fill(points) >= 0.62 && back < 2) return 'arch';
+	if (half >= 0.25 && half < 0.6 && gap > 0.65 && fill(points) >= 0.62 && back < 2) return 'arch';
 	if (loops >= 1.6) return 'swirl';
 	// One loop: a triangle if it's thin with corners, a square if it's full with corners, otherwise a circle.
 	if (loops >= 0.55) {

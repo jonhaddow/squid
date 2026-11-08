@@ -467,13 +467,15 @@ function drawTurtle(ctx: Ctx, s: number, t: number, happy: boolean) {
 	ctx.save();
 	ctx.clip();
 	// Shell plates.
-	ctx.fillStyle = '#56c48a';
 	circle(ctx, 0, -s * 0.11, s * 0.09, '#56c48a');
 	for (const side of [-1, 1]) {
 		circle(ctx, side * s * 0.19, -s * 0.04, s * 0.07, '#56c48a');
 		circle(ctx, side * s * 0.1, -s * 0.2, s * 0.05, '#56c48a');
 	}
 	ctx.restore();
+	ctx.beginPath();
+	ctx.ellipse(0, s * 0.05, s * 0.32, s * 0.3, 0, Math.PI, TAU);
+	ctx.closePath();
 	ctx.strokeStyle = '#1f7a50';
 	ctx.lineWidth = s * 0.025;
 	ctx.stroke();
