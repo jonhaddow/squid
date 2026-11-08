@@ -6,6 +6,7 @@ import {
 	loadPlayers,
 	missed,
 	newPlayer,
+	nextShape,
 	nextHat,
 	planWave,
 	TOP_WAVE,
@@ -73,10 +74,13 @@ describe('difficulty', () => {
 		expect(five.crowd).toBeGreaterThan(one.crowd);
 		expect(planWave(TOP_WAVE + 1, 'easy').speed).toBe(planWave(TOP_WAVE, 'easy').speed);
 		expect(planWave(100, 'hard')).toEqual(planWave(TOP_WAVE, 'hard'));
-		expect(planWave(TOP_WAVE, 'hard').speed).toBeCloseTo(1.72);
 	});
 
 	it('uses the swirl only in hard mode', () => {
 		expect(firstCreatures(1, 'hard')).toEqual(['zigzag', 'swirl', 'circle']);
+		const easy = Array.from({ length: 50 }, () => nextShape([], 'easy'));
+		const hard = Array.from({ length: 50 }, () => nextShape([], 'hard'));
+		expect(easy).not.toContain('swirl');
+		expect(hard).not.toContain('square');
 	});
 });

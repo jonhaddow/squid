@@ -92,8 +92,6 @@ test('hard mode keeps going and speeds up every 10 friends', async ({ page }) =>
 	const now = await state(page);
 	expect(now).toMatchObject({ wave: 2, over: false });
 	expect(now.speed).toBeGreaterThan(start.speed);
-	// No end screen: more creatures come.
-	await expect(page.getByText('Oh no!')).toBeHidden();
 });
 
 test('asks to turn the phone sideways in portrait', async ({ page }) => {

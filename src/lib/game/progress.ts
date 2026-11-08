@@ -8,7 +8,7 @@ export type Hat = (typeof HATS)[number];
 export type Player = {
 	/** Body colour of their squid. */
 	color: string;
-	/** The wave they're on in easy mode, from 1. Hard mode starts at 1 each game. */
+	/** The wave they're on in easy mode, from 1 (saved as `level` from before waves). Hard mode starts at 1 each game. */
 	level: number;
 	stars: number;
 	hats: Hat[];
@@ -99,3 +99,8 @@ export function planWave(wave: number, mode: Mode): Plan {
 /** A fresh start meets one of each kind first, so each can be taught; then they're random. */
 export const firstCreatures = (wave: number, mode: Mode): Shape[] =>
 	wave === 1 ? [...SHAPES[mode]] : [];
+
+export function nextShape(queue: Shape[], mode: Mode, random = Math.random): Shape {
+	const shapes = SHAPES[mode];
+	return queue.shift() ?? shapes[Math.floor(random() * shapes.length)];
+}

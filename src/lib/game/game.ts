@@ -6,22 +6,16 @@
 // a hat and things speed up a little (to a limit). A creature the child hasn't
 // cast yet stops, and a finger draws its shape until the child copies it.
 import { sounds, say, unlock } from './audio.ts';
-import {
-	classify,
-	guide,
-	isAttempt,
-	SHAPES,
-	type Mode,
-	type Point,
-	type Shape
-} from './gestures.ts';
+import { classify, guide, isAttempt, type Mode, type Point, type Shape } from './gestures.ts';
 import {
 	befriended,
 	finishWave,
 	firstCreatures,
 	HARD_EASE,
 	missed,
+	nextShape,
 	planWave,
+	type Plan,
 	TOP_WAVE,
 	WAVE,
 	type Player
@@ -87,9 +81,7 @@ export class Game {
 	private queue: Shape[];
 	private friends = 0;
 	private spawnIn = 1;
-	private gap = 0;
-	private crowd = 0;
-	private waveSpeed = 0;
+	private pace: Plan;
 	/** Misses in a row: after 3, any real attempt counts and the finger shows again. */
 	private misses = 0;
 	private spin = 0;
@@ -112,15 +104,8 @@ export class Game {
 		this.ctx = canvas.getContext('2d')!;
 		this.wave = mode === 'hard' ? 1 : player.level;
 		this.queue = firstCreatures(this.wave, mode);
-		this.plan();
+		this.pace = planWave(this.wave, mode);
 		this.resize();
-	}
-
-	private plan() {
-		const plan = planWave(this.wave, this.mode);
-		this.gap = plan.gap;
-		this.crowd = plan.crowd;
-		this.waveSpeed = plan.speed;
 	}
 
 	start() {
@@ -158,7 +143,7 @@ export class Game {
 		return {
 			friends: this.friends,
 			wave: this.wave,
-			speed: this.waveSpeed * this.ease,
+			speed: this.pace.speed * this.ease,
 			creatures: this.mobs.filter((m) => m.state !== 'happy').map((m) => m.shape),
 			teaching: this.teaching()?.shape ?? null,
 			hearts: this.mode === 'hard' ? this.hearts : null,
@@ -179,7 +164,7 @@ export class Game {
 		return this.mode === 'hard' ? HARD_EASE : this.player.ease;
 	}
 	private get speed() {
-		return (this.w * 0.86 * this.waveSpeed * this.ease) / 16;
+		return (this.w * 0.86 * this.pace.speed * this.ease) / 16;
 	}
 
 	/** A creature whose shape the child hasn't cast yet waits, and the finger shows how. */
@@ -272,10 +257,9 @@ export class Game {
 		this.spawnIn -= dt;
 		const swimming = this.mobs.filter((b) => b.state !== 'happy').length;
 		const teaching = this.teaching() !== undefined;
-		if (!this.over && this.spawnIn <= 0 && swimming < this.crowd && !teaching) {
-			const shapes = SHAPES[this.mode];
+		if (!this.over && this.spawnIn <= 0 && swimming < this.pace.crowd && !teaching) {
 			this.mobs.push({
-				shape: this.queue.shift() ?? shapes[Math.floor(Math.random() * shapes.length)],
+				shape: nextShape(this.queue, this.mode),
 				x: this.w + m,
 				y: this.h * (0.22 + Math.random() * 0.48),
 				phase: Math.random() * 10,
@@ -283,7 +267,7 @@ export class Game {
 				t: 0,
 				targeted: false
 			});
-			this.spawnIn = this.gap / this.ease;
+			this.spawnIn = this.pace.gap / this.ease;
 		}
 
 		for (const mob of this.mobs) {
@@ -397,11 +381,10 @@ export class Game {
 	private nextWave() {
 		const hat = finishWave(this.player, this.mode);
 		this.wave++;
-		this.plan();
+		this.pace = planWave(this.wave, this.mode);
 		this.party = 2.5;
 		sounds.fanfare();
-		const faster = this.mode === 'hard' && this.wave <= TOP_WAVE;
-		say(hat ? 'A new hat!' : faster ? 'Faster!' : 'Well done!');
+		say(hat ? 'A new hat!' : this.wave <= TOP_WAVE ? 'Faster!' : 'Well done!');
 		this.burst({ x: this.w / 2, y: this.h * 0.4 }, 'confetti', 80, '');
 	}
 
