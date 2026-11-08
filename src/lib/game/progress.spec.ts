@@ -62,7 +62,7 @@ describe('difficulty', () => {
 
 	it('teaches each shape first on level 1, then gets busier', () => {
 		const one = planLevel(1, 1, 'easy', () => 0);
-		expect(one.creatures.slice(0, 3)).toEqual(['zigzag', 'line', 'circle']);
+		expect(one.creatures.slice(0, 3)).toEqual(['zigzag', 'square', 'circle']);
 		expect(one.crowd).toBe(1);
 		const five = planLevel(5, 1, 'easy');
 		expect(five.creatures.length).toBeGreaterThan(one.creatures.length);
@@ -75,6 +75,6 @@ describe('difficulty', () => {
 		const hard = planLevel(1, 1, 'hard').creatures;
 		expect(easy).not.toContain('swirl');
 		expect(hard.slice(0, 3)).toEqual(['zigzag', 'swirl', 'circle']);
-		expect(hard).not.toContain('line');
+		expect(hard).not.toContain('square');
 	});
 });

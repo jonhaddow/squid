@@ -234,7 +234,7 @@ export class Game {
 		if (target.shape === 'zigzag') {
 			sounds.zap();
 			this.flash = 1;
-		} else if (target.shape === 'swirl' || target.shape === 'line') sounds.bubbles();
+		} else if (target.shape === 'swirl' || target.shape === 'square') sounds.bubbles();
 		else sounds.shield();
 	}
 
@@ -486,7 +486,7 @@ export class Game {
 			}
 			ctx.stroke();
 			ctx.restore();
-		} else if (spell.shape === 'swirl' || spell.shape === 'line') {
+		} else if (spell.shape === 'swirl' || spell.shape === 'square') {
 			for (let i = 0; i < 6; i++) {
 				const k = Math.max(0, f - i * 0.06);
 				const x = from.x + (to.x - from.x) * k;

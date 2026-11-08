@@ -36,7 +36,7 @@ test('the first creature waits to be taught, then a drawn zap makes it a friend'
 	await expect(page.getByLabel('1 stars')).toBeVisible();
 });
 
-test('easy mode teaches a straight line for the jellyfish, not a swirl', async ({ page }) => {
+test('easy mode teaches a square for the jellyfish, not a swirl', async ({ page }) => {
 	await page.clock.install();
 	await page.goto('/');
 	await page.getByLabel('Play as the purple squid').click();
@@ -45,8 +45,8 @@ test('easy mode teaches a straight line for the jellyfish, not a swirl', async (
 	expect((await state(page)).teaching).toBe('zigzag');
 	await draw(page, 'zigzag');
 	await page.clock.runFor(10_000);
-	expect((await state(page)).teaching).toBe('line');
-	await draw(page, 'line');
+	expect((await state(page)).teaching).toBe('square');
+	await draw(page, 'square');
 	await page.clock.runFor(1000);
 	expect((await state(page)).friends).toBe(2);
 });
@@ -55,7 +55,7 @@ test('hard mode has 3 hearts and a game over, then a retry', async ({ page }) =>
 	await page.addInitScript(() =>
 		localStorage.setItem(
 			'squid-spells-v1',
-			JSON.stringify([{ learned: ['zigzag', 'swirl', 'circle', 'line'] }])
+			JSON.stringify([{ learned: ['zigzag', 'swirl', 'circle', 'square'] }])
 		)
 	);
 	await page.clock.install();
