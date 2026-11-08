@@ -61,6 +61,15 @@ export const sounds = {
 		for (const [i, f] of [523, 659, 784].entries())
 			tone(f, { at: i * 0.04, length: 0.5, type: 'triangle', volume: 0.12 });
 	},
+	twinkle() {
+		for (const [i, f] of [1047, 1319, 1568, 2093].entries())
+			tone(f, { at: i * 0.05, length: 0.25, type: 'sine', volume: 0.1 });
+	},
+	/** The kraken arriving: a low, wobbly rumble, more silly than scary. */
+	kraken() {
+		for (const [i, f] of [110, 98, 123].entries())
+			tone(f, { at: i * 0.25, length: 0.35, type: 'triangle', slide: -20, volume: 0.3 });
+	},
 	fizzle: () => tone(400, { length: 0.35, slide: -300, type: 'square', volume: 0.06 }),
 	bump: () => tone(140, { length: 0.3, slide: -60, type: 'triangle', volume: 0.3 }),
 	friend() {
