@@ -2,7 +2,7 @@
 // shape it needs. Draw that shape anywhere and the squid's spell makes it a
 // friend. In easy mode nothing hurts: a creature that reaches the squid just
 // bumps it and backs off, and every wave is the same pace. Hard mode is faster,
-// has 3 hearts and a game over, and speeds up and gets busier each wave (to a
+// has 3 hearts and a game over, and speeds up every wave (and gets busier, to a
 // limit). Both are endless: every WAVE friends wins a hat. A creature the child
 // hasn't cast yet stops, and a finger draws its shape until the child copies it.
 // Every 3rd wave ends with the kraken: the other creatures swim off, and it
@@ -26,7 +26,6 @@ import {
 	nextShape,
 	planWave,
 	type Plan,
-	TOP_WAVE,
 	WAVE,
 	type Player
 } from './progress.ts';
@@ -486,9 +485,7 @@ export class Game {
 		this.pace = planWave(this.wave, this.mode);
 		this.party = 2.5;
 		sounds.fanfare();
-		say(
-			hat ? 'A new hat!' : this.mode === 'hard' && this.wave <= TOP_WAVE ? 'Faster!' : 'Well done!'
-		);
+		say(hat ? 'A new hat!' : this.mode === 'hard' ? 'Faster!' : 'Well done!');
 		this.burst({ x: this.w / 2, y: this.h * 0.4 }, 'confetti', 80, '');
 	}
 

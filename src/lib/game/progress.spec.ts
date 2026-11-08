@@ -87,13 +87,16 @@ describe('difficulty', () => {
 		expect(planWave(50, 'easy')).toEqual(planWave(1, 'easy'));
 	});
 
-	it('makes hard mode faster and busier each wave, to a limit', () => {
+	it('makes hard mode faster every wave, and busier to a limit', () => {
 		const one = planWave(1, 'hard');
 		const five = planWave(5, 'hard');
 		expect(one.speed).toBeGreaterThan(1);
 		expect(five.speed).toBeGreaterThan(one.speed);
 		expect(five.crowd).toBeGreaterThan(one.crowd);
-		expect(planWave(100, 'hard')).toEqual(planWave(TOP_WAVE, 'hard'));
+		const top = planWave(TOP_WAVE, 'hard');
+		const later = planWave(TOP_WAVE + 3, 'hard');
+		expect(later.speed).toBeGreaterThan(top.speed);
+		expect(later).toMatchObject({ gap: top.gap, crowd: top.crowd });
 	});
 
 	it('uses the swirl only in hard mode', () => {
