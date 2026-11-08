@@ -387,7 +387,6 @@ export class Game {
 	}
 
 	private befriend(mob: Mob, shape: Shape) {
-		this.player.stars++;
 		if (mob.boss && ++mob.hits < BOSS_HITS) {
 			this.hitKraken(mob);
 			this.events.save();
@@ -422,7 +421,9 @@ export class Game {
 		this.events.save();
 	}
 
+	/** A star flies to the hard-mode score. Easy mode has no score. */
 	private flyStar(from: Point) {
+		if (this.mode === 'easy') return;
 		this.bits.push({
 			kind: 'star',
 			x: from.x,
@@ -709,18 +710,19 @@ export class Game {
 
 	private drawHud() {
 		const { ctx, w } = this;
-		ctx.save();
-		ctx.translate(40, 36);
-		ctx.shadowColor = 'rgba(0,0,0,0.4)';
-		ctx.shadowBlur = 6;
-		art.star(ctx, 20, '#ffe066');
-		ctx.fillStyle = '#fff';
-		ctx.font = `30px ${FONT}`;
-		ctx.textBaseline = 'middle';
-		ctx.fillText(String(this.player.stars), 30, 3);
-		ctx.restore();
+		if (this.mode === 'hard') {
+			// This game's score: friends made so far.
+			ctx.save();
+			ctx.translate(40, 36);
+			ctx.shadowColor = 'rgba(0,0,0,0.4)';
+			ctx.shadowBlur = 6;
+			art.star(ctx, 20, '#ffe066');
+			ctx.fillStyle = '#fff';
+			ctx.font = `30px ${FONT}`;
+			ctx.textBaseline = 'middle';
+			ctx.fillText(String(this.friends), 30, 3);
+			ctx.restore();
 
-		if (this.mode === 'hard')
 			for (let i = 0; i < HEARTS; i++) {
 				const full = i < this.hearts;
 				// The heart just lost shakes.
@@ -731,6 +733,7 @@ export class Game {
 				art.heart(ctx, 15, full ? '#ff4d6d' : '#fff');
 				ctx.restore();
 			}
+		}
 
 		const kraken = this.fighting ? this.mobs.find((m) => m.boss) : undefined;
 		if (kraken) {

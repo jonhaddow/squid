@@ -31,9 +31,9 @@ test('the first creature waits to be taught, then a drawn zap makes it a friend'
 	await expect.poll(async () => (await state(page)).friends).toBe(1);
 	await expect(page.getByLabel('Home')).toBeVisible();
 
-	// Progress is saved: back home, the star shows on the squid.
+	// Easy mode doesn't count towards the high score.
 	await page.getByLabel('Home').click();
-	await expect(page.getByLabel('1 stars')).toBeVisible();
+	await expect(page.getByLabel('High score 0')).toBeVisible();
 });
 
 test('easy mode teaches a square for the jellyfish, not a swirl', async ({ page }) => {

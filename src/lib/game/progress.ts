@@ -57,7 +57,6 @@ export type Player = {
 	color: string;
 	/** The wave they're on in easy mode, from 1 (saved as `level` from before waves). Hard mode starts at 1 each game. */
 	level: number;
-	stars: number;
 	/** Most friends made in one hard-mode game: the leaderboard score. */
 	best: number;
 	/** Prizes won so far (saved as `hats` from when only hats were won). */
@@ -92,7 +91,6 @@ export function newPlayer(): Player {
 		name: '',
 		color: PALETTE[0],
 		level: 1,
-		stars: 0,
 		best: 0,
 		won: [],
 		hat: null,
