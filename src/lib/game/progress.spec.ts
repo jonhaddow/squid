@@ -23,20 +23,20 @@ function memory() {
 describe('player', () => {
 	it('fills in new fields for older saves', () => {
 		const store = memory();
-		store.setItem('squid-spells-v1', JSON.stringify([{ level: 3, stars: 9 }]));
-		expect(loadPlayer(store)).toMatchObject({ level: 3, stars: 9, best: 0, name: '', hats: [] });
+		store.setItem('squid-spells-v1', JSON.stringify([{ level: 3 }]));
+		expect(loadPlayer(store)).toMatchObject({ level: 3, best: 0, name: '', hats: [] });
 	});
 
 	it('keeps the first squid of an old two-squid save', () => {
 		const store = memory();
-		store.setItem('squid-spells-v1', JSON.stringify([{ stars: 4 }, { stars: 7 }]));
-		expect(loadPlayer(store).stars).toBe(4);
+		store.setItem('squid-spells-v1', JSON.stringify([{ best: 4 }, { best: 7 }]));
+		expect(loadPlayer(store).best).toBe(4);
 	});
 
 	it('starts with a fresh squid and saves it', () => {
 		const store = memory();
 		const player = loadPlayer(store);
-		expect(player.stars).toBe(0);
+		expect(player.best).toBe(0);
 		player.best = 12;
 		savePlayer(store, player);
 		expect(loadPlayer(store).best).toBe(12);

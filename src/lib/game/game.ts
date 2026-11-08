@@ -387,7 +387,6 @@ export class Game {
 	}
 
 	private befriend(mob: Mob, shape: Shape) {
-		this.player.stars++;
 		if (mob.boss && ++mob.hits < BOSS_HITS) {
 			this.hitKraken(mob);
 			this.events.save();
@@ -717,7 +716,7 @@ export class Game {
 		ctx.fillStyle = '#fff';
 		ctx.font = `30px ${FONT}`;
 		ctx.textBaseline = 'middle';
-		ctx.fillText(String(this.player.stars), 30, 3);
+		ctx.fillText(String(this.player.best), 30, 3);
 		ctx.restore();
 
 		if (this.mode === 'hard')
