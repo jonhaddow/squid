@@ -161,7 +161,7 @@
 	/** Runs the game on the canvas while it's on screen. */
 	function run() {
 		return (canvas: HTMLCanvasElement) => {
-			// Untracked: the game changes the player as it goes (stars, level), which
+			// Untracked: the game changes the player as it goes (best, level), which
 			// mustn't restart it. A retry restarts it through `round`.
 			const game = untrack(
 				() =>
@@ -323,7 +323,7 @@
 					<div class="slot">
 						<button class="pick" onclick={pick} aria-label="Play" style:--squid={player.color}>
 							<SquidPreview look={player} />
-							<span class="stars" aria-label="High score {player.best}">
+							<span class="best" aria-label="High score {player.best}">
 								<svg viewBox="0 0 24 24" aria-hidden="true"
 									><path
 										d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"
@@ -465,13 +465,13 @@
 		transform: scale(0.95);
 	}
 
-	.stars {
+	.best {
 		display: flex;
 		align-items: center;
 		gap: 6px;
 		font-size: 28px;
 	}
-	.stars svg {
+	.best svg {
 		width: 26px;
 		fill: var(--gold);
 	}
