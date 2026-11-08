@@ -14,7 +14,13 @@ self.addEventListener('install', (event) =>
 	event.waitUntil(
 		(async () => {
 			const cache = await caches.open(CACHE);
-			await cache.addAll(FILES);
+			try {
+				await cache.addAll(FILES);
+			} catch (e) {
+				// Offline mid-download: don't leave a half copy that looks like an update.
+				await caches.delete(CACHE);
+				throw e;
+			}
 			await self.skipWaiting();
 		})()
 	)
