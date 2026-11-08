@@ -221,14 +221,23 @@
 		{/if}
 	{/if}
 
-	{#if portrait}
-		<div class="rotate" role="alert" aria-label="Turn your device sideways">
-			<svg viewBox="0 0 100 100" aria-hidden="true">
-				<rect class="phone" x="32" y="14" width="36" height="72" />
-				<path class="arrow" d="M20 70 A34 34 0 0 1 30 26 M24 22 l6 4 -4 6" />
+	<!-- Shown by CSS in portrait, so it's there from the first paint. -->
+	<div class="rotate" role="alert" aria-label="Turn your device sideways">
+		<div class="turn">
+			<div class="phone">
+				<SquidPreview
+					color={players[0]?.color ?? '#b45cff'}
+					hat={players[0]?.hat ?? null}
+					size={96}
+				/>
+			</div>
+			<svg class="arrow" viewBox="0 0 100 100" aria-hidden="true">
+				<path d="M90 30 A46 46 0 0 0 10 30" />
+				<path d="M3 20 L10 31 L22 26" />
 			</svg>
 		</div>
-	{/if}
+		<p>Turn me sideways!</p>
+	</div>
 </main>
 
 <style>
@@ -430,39 +439,104 @@
 	}
 
 	.rotate {
+		display: none;
+	}
+	@media (orientation: portrait) {
+		.rotate {
+			display: flex;
+		}
+	}
+	.rotate {
 		position: fixed;
 		inset: 0;
 		z-index: 10;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 24px;
+		background: linear-gradient(var(--sea-3), var(--sea-2) 55%, var(--sea));
+	}
+	.turn {
+		position: relative;
+		width: 260px;
+		height: 260px;
 		display: grid;
 		place-items: center;
-		background: var(--sea);
 	}
-	.rotate svg {
-		width: min(60vw, 260px);
-		overflow: visible;
-	}
+	/* A phone with the squid on its screen, turning sideways and back. */
 	.phone {
-		fill: none;
-		stroke: var(--gold);
-		stroke-width: 5;
-		transform-origin: 50px 50px;
-		animation: turn 2.4s ease-in-out infinite;
+		width: 112px;
+		height: 190px;
+		display: grid;
+		place-items: center;
+		border: 7px solid var(--ink);
+		border-radius: 22px;
+		background: linear-gradient(var(--sea-3), var(--sea));
+		box-shadow:
+			0 0 0 4px var(--gold),
+			0 0 40px rgba(124, 240, 255, 0.35);
+		animation: turn 3s ease-in-out infinite;
+	}
+	/* The squid stays upright while the phone turns, like the game will. */
+	.phone > :global(*) {
+		animation: upright 3s ease-in-out infinite;
 	}
 	.arrow {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
 		fill: none;
 		stroke: var(--glow);
 		stroke-width: 5;
-		stroke-linecap: square;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		animation: nudge 3s ease-in-out infinite;
+	}
+	.rotate p {
+		margin: 0;
+		font-size: 34px;
+		color: var(--gold);
+		text-shadow: 0 4px 0 var(--violet);
 	}
 
 	@keyframes turn {
 		0%,
-		25% {
+		20% {
 			rotate: 0deg;
 		}
-		60%,
-		100% {
+		50%,
+		85% {
 			rotate: -90deg;
+		}
+		100% {
+			rotate: 0deg;
+		}
+	}
+	@keyframes upright {
+		0%,
+		20% {
+			rotate: 0deg;
+		}
+		50%,
+		85% {
+			rotate: 90deg;
+		}
+		100% {
+			rotate: 0deg;
+		}
+	}
+	@keyframes nudge {
+		0%,
+		15% {
+			opacity: 1;
+		}
+		50%,
+		90% {
+			opacity: 0.25;
+		}
+		100% {
+			opacity: 1;
 		}
 	}
 </style>
