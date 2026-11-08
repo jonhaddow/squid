@@ -8,7 +8,7 @@ Each kid's squid has a dressing room (the T-shirt button): a name, a colour, a h
 
 Both modes are endless: every 10 friends unlocks a hat. Easy mode has no losing, stays at the same pace and remembers how far they got. Hard mode is faster, speeds up and gets busier every 10 friends, has 3 hearts and a game over, and starts again each game.
 
-- Install: open it in Safari (or Chrome), then Share → Add to Home Screen.
+- Install: open it in Safari (or Chrome), then Share → Add to Home Screen. The glowing phone button on the start screen shows the steps (or installs it straight away in Chrome on Android).
 - Landscape only (a rotate prompt shows in portrait), installable as a PWA, and it plays offline.
 - No sign-in, no server, no data leaves the device: progress for the two squids is in localStorage.
 - Built for small kids: almost no words, a finger shows each new shape, no losing, and it slows down when they miss.

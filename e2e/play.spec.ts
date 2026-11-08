@@ -124,6 +124,26 @@ test('wave 3 ends with the kraken: the others swim off and it takes 3 spells', a
 	expect(await state(page)).toMatchObject({ wave: 4, kraken: null });
 });
 
+test.describe('on an iPad in Safari', () => {
+	test.use({
+		userAgent:
+			'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15'
+	});
+
+	test('shows how to add the game to the home screen', async ({ page }) => {
+		// iPads say they're Macs with a touch screen; the emulator reports 1 touch point, iPads 5.
+		await page.addInitScript(() =>
+			Object.defineProperty(navigator, 'maxTouchPoints', { get: () => 5 })
+		);
+		await page.goto('/');
+		await page.getByRole('button', { name: 'Add to Home Screen' }).click();
+		const steps = page.getByRole('dialog', { name: 'Add to Home Screen' });
+		await expect(steps.getByText('Tap Share')).toBeVisible();
+		await steps.getByRole('button', { name: 'Close' }).click();
+		await expect(steps).toBeHidden();
+	});
+});
+
 test('asks to turn the phone sideways in portrait', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/');

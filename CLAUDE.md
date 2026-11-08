@@ -11,6 +11,7 @@ A canvas drawing game for Jon's kids (6 and 8): draw a shape to cast a spell and
 - The dressing room (T-shirt button on each squid) sets `name`, `color` (from `PALETTE`), `hat` (only those won; winning one doesn't change what's worn), `neck` and `face`. `drawSquid` takes the player as its look.
 - Keep it for small kids: no reading needed, nothing scary, no losing in easy mode (hard mode's game over stays gentle), no ads, links or purchases.
 - Updates: the service worker caches each build as `squid-<version>`; the page reloads into a newer cache when it's on the start screen, never mid-level, and checks again whenever the app comes back on screen (iPads resume rather than relaunch).
+- The start screen's corner button (`InstallHint.svelte`, platform from `src/lib/install.ts`) shows how to add the game to the home screen; hidden once installed and on computers. Chromium emulation reports 1 touch point, so iPad tests fake `maxTouchPoints`.
 - `shot` is portrait-only, which shows the rotate prompt: use `node scripts/shot.ts` instead.
 - The e2e tests read `window.__squid.state`.
 
