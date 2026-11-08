@@ -1,0 +1,18 @@
+# Weekly dependency updates, opened on Friday so they're ready for the
+# Saturday PR review. Minor and patch updates come as one grouped PR; each
+# major update gets its own.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: friday
+      time: '06:00'
+      timezone: Europe/London
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch

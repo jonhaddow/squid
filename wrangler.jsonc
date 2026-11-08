@@ -1,0 +1,18 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "squid",
+	"compatibility_date": "2026-10-03",
+	"compatibility_flags": ["nodejs_als"],
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	// Every page is prerendered, so the Worker only ever serves these files.
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare"
+	},
+	"workers_dev": false,
+	"routes": [{ "pattern": "squid.app.haddow.me", "custom_domain": true }],
+	"observability": {
+		"enabled": true
+	},
+	"preview_urls": false
+}

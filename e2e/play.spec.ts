@@ -1,0 +1,44 @@
+import { expect, test, type Page } from '@playwright/test';
+import { guide, type Shape } from '../src/lib/game/gestures.ts';
+
+test.use({ reducedMotion: 'reduce' });
+
+/** Draws a shape with the mouse, in the middle of the screen. */
+async function draw(page: Page, shape: Shape) {
+	const size = 160;
+	const points = guide(shape).map((p) => ({ x: 300 + p.x * size, y: 100 + p.y * size }));
+	await page.mouse.move(points[0].x, points[0].y);
+	await page.mouse.down();
+	for (const p of points.slice(1)) await page.mouse.move(p.x, p.y);
+	await page.mouse.up();
+}
+
+const state = (page: Page) => page.evaluate(() => window.__squid!.state);
+
+test('the first creature waits to be taught, then a drawn zap makes it a friend', async ({
+	page
+}) => {
+	await page.goto('/');
+	await page.getByLabel('Play as the purple squid').click();
+	await expect.poll(async () => (await state(page)).teaching, { timeout: 15_000 }).toBe('zigzag');
+
+	await draw(page, 'circle'); // the wrong shape fizzles
+	await page.waitForTimeout(600);
+	expect((await state(page)).friends).toBe(0);
+
+	await draw(page, 'zigzag');
+	await expect.poll(async () => (await state(page)).friends).toBe(1);
+	await expect(page.getByLabel('Home')).toBeVisible();
+
+	// Progress is saved: back home, the star shows on the squid.
+	await page.getByLabel('Home').click();
+	await expect(page.getByLabel('1 stars')).toBeVisible();
+});
+
+test('asks to turn the phone sideways in portrait', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/');
+	await expect(page.getByRole('alert', { name: 'Turn your device sideways' })).toBeVisible();
+	await page.setViewportSize({ width: 844, height: 390 });
+	await expect(page.getByRole('alert')).toBeHidden();
+});

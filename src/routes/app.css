@@ -1,0 +1,61 @@
+/* Squid Spells: always dark, deep sea. Luckiest Guy for the few words there
+   are, bioluminescent cyan and spell gold on navy, chunky square blocks
+   (no rounded corners) for the buttons. */
+:root {
+	--sea: #071a3d;
+	--sea-2: #0b3570;
+	--sea-3: #1466a8;
+	--gold: #ffe066;
+	--gold-dark: #c98a00;
+	--glow: #7cf0ff;
+	--ink: #1a1033;
+	--violet: #7a3cff;
+	--display: 'Luckiest Guy', system-ui, sans-serif;
+	color-scheme: dark;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	height: 100%;
+	overflow: hidden;
+	overscroll-behavior: none;
+	background: var(--sea);
+	color: #fff;
+	font-family: var(--display);
+	-webkit-user-select: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+button {
+	font: inherit;
+	color: inherit;
+	cursor: pointer;
+	touch-action: manipulation;
+}
+
+/* A chunky block button: square corners, a hard shadow it presses into. */
+.block {
+	display: grid;
+	place-items: center;
+	border: 4px solid var(--ink);
+	border-radius: 0;
+	background: var(--gold);
+	color: var(--ink);
+	box-shadow: 0 6px 0 var(--gold-dark);
+	transition: transform 80ms;
+}
+.block:active {
+	transform: translateY(5px);
+	box-shadow: 0 1px 0 var(--gold-dark);
+}
+.block svg {
+	width: 55%;
+	height: 55%;
+}
