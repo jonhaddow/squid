@@ -2,6 +2,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { dev, version } from '$app/env';
 	import SquidPreview from '#lib/components/SquidPreview.svelte';
+	import InstallHint from '#lib/components/InstallHint.svelte';
 	import ThingIcon from '#lib/components/ThingIcon.svelte';
 	import { unlock, sounds } from '#lib/game/audio.ts';
 	import { Game, HEARTS } from '#lib/game/game.ts';
@@ -335,6 +336,7 @@
 					</div>
 				{/each}
 			</div>
+			<InstallHint />
 		</section>
 	{:else}
 		{#key round}
