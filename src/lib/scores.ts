@@ -1,11 +1,11 @@
 // The family leaderboard: each device's squid and its best hard-mode game.
 // The page posts its squid to /api/scores and gets the top squids back.
-import type { Player } from './game/progress.ts';
+import type { Look, Player } from './game/progress.ts';
 
-/** What a device sends: its squid's name, colour and best game. */
-export type Entry = { device: string; name: string; color: string; best: number };
-/** A row of the board. `me` marks this device's squid. */
-export type Row = { name: string; color: string; best: number; me: boolean };
+/** What a device sends: its squid's name, look and best game. */
+export type Entry = Look & { device: string; name: string; best: number };
+/** A row of the board, with the squid to draw. `me` marks this device's squid. */
+export type Row = Look & { name: string; best: number; me: boolean };
 
 const DEVICE = 'squid-device';
 
@@ -26,6 +26,9 @@ export async function syncScores(player: Player): Promise<Row[] | null> {
 			device: deviceId(localStorage),
 			name: player.name,
 			color: player.color,
+			hat: player.hat,
+			neck: player.neck,
+			face: player.face,
 			best: player.best
 		};
 		const res = await fetch('/api/scores', {
