@@ -8,7 +8,15 @@
 // Every 5th wave ends with the kraken: the other creatures swim off, and it
 // needs 3 spells, a random shape each, to become a friend.
 import { sounds, say, unlock } from './audio.ts';
-import { classify, guide, isAttempt, type Mode, type Point, type Shape } from './gestures.ts';
+import {
+	classify,
+	guide,
+	isAttempt,
+	TRIANGLE,
+	type Mode,
+	type Point,
+	type Shape
+} from './gestures.ts';
 import {
 	BOSS_HITS,
 	bossShapes,
@@ -66,8 +74,19 @@ export const HEARTS = 3;
 const SPELL_TIME = 0.45;
 const FONT = '"Luckiest Guy", system-ui, sans-serif';
 const CONFETTI = ['#ffe066', '#ff5fa2', '#7cf0ff', '#b45cff', '#5dff9d'];
-/** The triangle spell, drawn once. */
-const TRIANGLE = guide('triangle');
+/** The kraken's sizes and speeds, relative to a normal creature. */
+const KRAKEN = {
+	size: 2.4,
+	/** It swims in quickly to here (across the screen), then creeps. */
+	creepFrom: 0.75,
+	enter: 3,
+	creep: 0.3,
+	/** How far a spell or bump pushes it back, against 0.7 for the others. */
+	knock: 0.25,
+	/** Its badge: how high above it and how big. */
+	badgeY: 1.45,
+	badge: 0.34
+};
 
 /** Still grumpy and showing its shape. */
 const isOpen = (m: Mob) => m.state === 'swim' || m.state === 'back';
@@ -179,7 +198,7 @@ export class Game {
 		return (this.w * 0.86 * this.pace.speed) / 16;
 	}
 	private sizeOf(mob: Mob) {
-		return mob.boss ? this.mobSize * 2.4 : this.mobSize;
+		return mob.boss ? this.mobSize * KRAKEN.size : this.mobSize;
 	}
 
 	/** A creature whose shape the child hasn't cast yet waits, and the finger shows how. */
@@ -298,7 +317,11 @@ export class Game {
 				const learning = !this.player.learned.includes(mob.shape) && !mob.targeted;
 				const stopAt = this.w * 0.62;
 				// The kraken swims in quickly, then creeps.
-				const pace = !mob.boss ? 1 : mob.x > this.w * 0.75 ? 3 : 0.3;
+				const pace = !mob.boss
+					? 1
+					: mob.x > this.w * KRAKEN.creepFrom
+						? KRAKEN.enter
+						: KRAKEN.creep;
 				if (!(learning && mob.x <= stopAt)) mob.x -= this.speed * pace * dt;
 				// A creature already hit by a spell can't bump.
 				if (!mob.targeted && mob.x - size * 0.3 < sx + s * 0.3) {
@@ -313,7 +336,7 @@ export class Game {
 				}
 			} else if (mob.state === 'back') {
 				// The kraken's too big to be pushed far.
-				mob.x += this.w * (mob.boss ? 0.25 : 0.7) * dt * Math.max(0, 1 - mob.t);
+				mob.x += this.w * (mob.boss ? KRAKEN.knock : 0.7) * dt * Math.max(0, 1 - mob.t);
 				if (mob.t > 1) {
 					mob.state = 'swim';
 					mob.t = 0;
@@ -374,22 +397,22 @@ export class Game {
 		this.burst({ x: mob.x, y: mob.y }, 'heart', mob.boss ? 30 : 8, '#ff5fa2');
 		this.burst(
 			{ x: mob.x, y: mob.y },
-			!mob.boss && art.CREATURE[shape] === 'jelly' ? 'bubble' : 'spark',
+			art.CREATURE[shape] === 'jelly' ? 'bubble' : 'spark',
 			14,
 			'#ffe066'
 		);
 		this.flyStar(mob);
 		sounds.friend();
-		if (mob.boss) {
-			this.fighting = false;
-			this.nextWave();
-		} else if (!this.fighting) {
-			// A creature already hit when the kraken came still turns friendly, but the wave's done.
-			this.friends++;
-			if (this.friends % WAVE === 0) {
-				if (isBossWave(this.wave)) this.startKraken();
-				else this.nextWave();
+		// A creature a spell was already flying at when the kraken came still
+		// turns friendly, but doesn't count: its wave's done.
+		if (this.fighting) {
+			if (mob.boss) {
+				this.fighting = false;
+				this.nextWave();
 			}
+		} else if (++this.friends % WAVE === 0) {
+			if (isBossWave(this.wave)) this.startKraken();
+			else this.nextWave();
 		}
 		this.events.save();
 	}
@@ -438,7 +461,6 @@ export class Game {
 		this.burst({ x: mob.x, y: mob.y }, 'spark', 24, '#ffe066');
 		this.flyStar(mob);
 		sounds.bump();
-		sounds.friend();
 	}
 
 	private loseHeart() {
@@ -516,9 +538,9 @@ export class Game {
 			}
 			if (isOpen(mob)) {
 				const pulse = mob === this.teaching() ? 1 + Math.sin(this.t * 6) * 0.12 : 1;
-				ctx.translate(0, mob.boss ? -m * 1.45 : -m * 0.75);
+				ctx.translate(0, -m * (mob.boss ? KRAKEN.badgeY : 0.75));
 				ctx.scale(pulse, pulse);
-				art.drawBadge(ctx, mob.shape, m * (mob.boss ? 0.34 : 0.26), mob.targeted ? 0 : 1.2);
+				art.drawBadge(ctx, mob.shape, m * (mob.boss ? KRAKEN.badge : 0.26), mob.targeted ? 0 : 1.2);
 			}
 			ctx.restore();
 		}
@@ -584,7 +606,7 @@ export class Game {
 			ctx.save();
 			ctx.translate(at.x, at.y);
 			ctx.rotate(f * Math.PI * 4);
-			art.tracePath(ctx, TRIANGLE, 40 + f * 30, '#7cf0ff', 6);
+			art.tracePath(ctx, [...TRIANGLE, TRIANGLE[0]], 40 + f * 30, '#7cf0ff', 6);
 			ctx.restore();
 		} else if (spell.shape === 'swirl' || spell.shape === 'square') {
 			for (let i = 0; i < 6; i++) {

@@ -69,6 +69,39 @@ describe('classify', () => {
 		expect(classify(draw(lopsided, 220, 4))).toBe('star');
 	});
 
+	it('keeps squares and triangles drawn round past the start, and diamonds, as they were', () => {
+		const square = [0, 1, 2, 3, 0, 1, 2].map(
+			(i) =>
+				[
+					{ x: 0, y: 0 },
+					{ x: 1, y: 0 },
+					{ x: 1, y: 1 },
+					{ x: 0, y: 1 }
+				][i]
+		);
+		square.push({ x: 0.5, y: 1 });
+		const tri = [
+			{ x: 0.5, y: 0 },
+			{ x: 1, y: 0.9 },
+			{ x: 0, y: 0.9 },
+			{ x: 0.5, y: 0 },
+			{ x: 1, y: 0.9 },
+			{ x: 0.2, y: 0.9 }
+		];
+		const diamond = [
+			{ x: 0.5, y: 0 },
+			{ x: 1, y: 0.5 },
+			{ x: 0.5, y: 1 },
+			{ x: 0, y: 0.5 },
+			{ x: 0.5, y: 0 }
+		];
+		for (let seed = 1; seed < 30; seed++) {
+			expect(classify(draw(square, 200, 4, seed))).toBe('square');
+			expect(classify(draw(tri, 200, 4, seed))).toBe('triangle');
+			expect(classify(draw(diamond, 200, 4, seed))).toBe('square');
+		}
+	});
+
 	it('never mistakes circles, swirls or squares for the new shapes', () => {
 		const box: Point[] = [
 			{ x: 0, y: 0 },

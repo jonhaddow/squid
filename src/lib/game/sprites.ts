@@ -484,7 +484,6 @@ function drawStarfish(ctx: Ctx, s: number, t: number, happy: boolean) {
 	ctx.lineJoin = 'round';
 	ctx.stroke();
 	ctx.fill();
-	ctx.fillStyle = '#ffd0b8';
 	for (let i = 0; i < 5; i++) {
 		const a = -Math.PI / 2 + (i * TAU) / 5;
 		for (const f of [0.2, 0.28])

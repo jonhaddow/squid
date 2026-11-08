@@ -121,15 +121,69 @@ function angles(points: Point[]): { corners: number; spikes: number; straight: n
 	return { corners, spikes, straight: straight / (points.length - 2 * k) };
 }
 
-/** How much of its bounding box a loop fills: about 0.9 for a square, 0.8 a circle, under 0.5 a triangle. */
-function fill(points: Point[], width: number, height: number): number {
+/**
+ * How much of its bounding box a loop's outline fills, with the box turned to
+ * fit best: about 0.9 for a square (even drawn as a diamond), 0.8 a circle,
+ * under 0.5 a triangle.
+ */
+function fill(points: Point[]): number {
+	// The outline's area, so drawing round twice or leaving a gap doesn't change it.
+	const outline = hull(points);
 	let area = 0;
-	for (let i = 0; i < points.length; i++) {
-		const a = points[i];
-		const b = points[(i + 1) % points.length];
+	for (let i = 0; i < outline.length; i++) {
+		const a = outline[i];
+		const b = outline[(i + 1) % outline.length];
 		area += a.x * b.y - b.x * a.y;
 	}
-	return Math.abs(area) / 2 / (width * height || 1);
+	area = Math.abs(area) / 2;
+	let best = 0;
+	for (let step = 0; step < 6; step++) {
+		const cos = Math.cos((step * Math.PI) / 12);
+		const sin = Math.sin((step * Math.PI) / 12);
+		let [minU, maxU, minV, maxV] = [Infinity, -Infinity, Infinity, -Infinity];
+		for (const p of outline) {
+			const u = p.x * cos + p.y * sin;
+			const v = p.y * cos - p.x * sin;
+			minU = Math.min(minU, u);
+			maxU = Math.max(maxU, u);
+			minV = Math.min(minV, v);
+			maxV = Math.max(maxV, v);
+		}
+		best = Math.max(best, area / ((maxU - minU) * (maxV - minV) || 1));
+	}
+	return best;
+}
+
+/** The convex hull: the shape a rubber band round the points would make. */
+function hull(points: Point[]): Point[] {
+	const sorted = [...points].sort((a, b) => a.x - b.x || a.y - b.y);
+	const cross = (o: Point, a: Point, b: Point) =>
+		(a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+	const half = (list: Point[]) => {
+		const out: Point[] = [];
+		for (const p of list) {
+			while (out.length >= 2 && cross(out[out.length - 2], out[out.length - 1], p) <= 0) out.pop();
+			out.push(p);
+		}
+		out.pop();
+		return out;
+	};
+	return [...half(sorted), ...half(sorted.reverse())];
+}
+
+/** How much of the line passes near the middle: a star's lines cross it, a triangle's or square's go round it. */
+function middle(points: Point[]): number {
+	let cx = 0;
+	let cy = 0;
+	for (const p of points) {
+		cx += p.x / points.length;
+		cy += p.y / points.length;
+	}
+	let reach = 0;
+	for (const p of points) reach = Math.max(reach, Math.hypot(p.x - cx, p.y - cy));
+	let near = 0;
+	for (const p of points) if (Math.hypot(p.x - cx, p.y - cy) < reach * 0.4) near++;
+	return near / points.length;
 }
 
 export function classify(raw: Point[]): Shape | null {
@@ -142,15 +196,13 @@ export function classify(raw: Point[]): Shape | null {
 	const points = resample(raw);
 	const loops = Math.abs(netTurning(points)) / (2 * Math.PI);
 	const { corners, spikes, straight } = angles(points);
-	// A star is straight lines and at least 4 sharp points (the fifth is where it starts and ends).
-	if (loops >= 0.6 && straight >= 0.35 && (spikes >= 4 || (loops >= 1.3 && corners >= 4)))
-		return 'star';
+	// A star is straight lines, at least 4 sharp points (the fifth is where it
+	// starts and ends), and lines that cross the middle.
+	if (loops >= 0.6 && straight >= 0.35 && spikes >= 4 && middle(points) >= 0.12) return 'star';
 	if (loops >= 1.6) return 'swirl';
 	// One loop: a triangle if it's thin with corners, a square if it's full with corners, otherwise a circle.
 	if (loops >= 0.55) {
-		const width = Math.max(...xs) - Math.min(...xs);
-		const height = Math.max(...ys) - Math.min(...ys);
-		const full = fill(points, width, height);
+		const full = fill(points);
 		if (corners >= 2 && straight >= 0.25 && full < 0.62) return 'triangle';
 		if (loops >= 0.65) return corners >= 3 && straight >= 0.3 && full >= 0.62 ? 'square' : 'circle';
 	}
@@ -165,6 +217,18 @@ export function classify(raw: Point[]): Shape | null {
 export function isAttempt(points: Point[]): boolean {
 	return pathLength(points) > 120;
 }
+
+/** The triangle's corners in a unit box, top point first. */
+export const TRIANGLE: Point[] = [
+	{ x: 0.5, y: 0.08 },
+	{ x: 0.95, y: 0.88 },
+	{ x: 0.05, y: 0.88 }
+];
+
+const starPoint = (i: number): Point => {
+	const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+	return { x: 0.5 + 0.47 * Math.cos(a), y: 0.53 + 0.47 * Math.sin(a) };
+};
 
 /** The shape drawn as points in a unit box (0..1), for the ghost finger and the badges. */
 export function guide(shape: Shape, n = 60): Point[] {
@@ -214,14 +278,3 @@ export function guide(shape: Shape, n = 60): Point[] {
 	}
 	return out;
 }
-
-const TRIANGLE: Point[] = [
-	{ x: 0.5, y: 0.08 },
-	{ x: 0.95, y: 0.88 },
-	{ x: 0.05, y: 0.88 }
-];
-
-const starPoint = (i: number): Point => {
-	const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
-	return { x: 0.5 + 0.47 * Math.cos(a), y: 0.53 + 0.47 * Math.sin(a) };
-};

@@ -133,7 +133,7 @@ export function nextShape(queue: Shape[], mode: Mode, random = Math.random): Sha
 }
 
 /** Every BOSS_EVERY waves (5, 10, 15...) ends with the kraken, after the wave's friends. */
-export const BOSS_EVERY = 5;
+const BOSS_EVERY = 5;
 /** Spells it takes to befriend the kraken. */
 export const BOSS_HITS = 3;
 
