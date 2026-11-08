@@ -41,6 +41,9 @@
 		if (!sw) return;
 		sw.register('/service-worker.js', { type: dev ? 'module' : 'classic' }).catch(() => {});
 		const newer = async () => {
+			// Not while a new worker is still downloading: its cache is half full.
+			const reg = await sw.getRegistration();
+			if (reg?.installing || reg?.waiting) return;
 			// Versions are build times, so a bigger one is newer.
 			const keys = await caches.keys();
 			if (keys.some((k) => k.startsWith('squid-') && Number(k.slice(6)) > Number(version)))
