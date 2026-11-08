@@ -12,6 +12,7 @@
 		FACES,
 		HATS,
 		loadPlayers,
+		NAME_MAX,
 		NECKS,
 		newPlayer,
 		PALETTE,
@@ -199,10 +200,26 @@
 	{#if playing === null && dressing !== null}
 		{@const player = players[dressing]}
 		<section class="dress">
-			<div class="mirror" style:--squid={player.color}>
-				{#key mirror}
-					<SquidPreview look={player} size={mirror} />
-				{/key}
+			<div class="me">
+				<div class="mirror" style:--squid={player.color}>
+					{#key mirror}
+						<SquidPreview look={player} size={mirror} />
+					{/key}
+				</div>
+				<!-- For a grown-up to type: Enter (Go on iPads) puts the keyboard away. -->
+				<input
+					class="name"
+					style:width="{mirror + 8}px"
+					aria-label="Name"
+					placeholder="Name"
+					autocomplete="off"
+					spellcheck="false"
+					maxlength={NAME_MAX}
+					enterkeyhint="done"
+					bind:value={player.name}
+					oninput={save}
+					onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+				/>
 			</div>
 			<div class="rails">
 				<div class="rail" role="group" aria-label="Colour">
@@ -295,6 +312,7 @@
 							aria-label="Play as squid {i + 1}"
 							style:--squid={player.color}
 						>
+							{#if player.name}<span class="label">{player.name}</span>{/if}
 							<SquidPreview look={player} />
 							<span class="stars" aria-label="{player.stars} stars">
 								<svg viewBox="0 0 24 24" aria-hidden="true"
@@ -508,6 +526,34 @@
 		padding: env(safe-area-inset-top) env(safe-area-inset-right) 0
 			max(72px, env(safe-area-inset-left));
 		--tile: min(13vh, 5.6vw, 72px);
+	}
+	.me {
+		display: grid;
+		justify-items: center;
+		gap: 2vh;
+	}
+	.name {
+		box-sizing: border-box;
+		padding: 6px 10px;
+		font: inherit;
+		font-size: 28px;
+		text-align: center;
+		color: #fff;
+		background: rgba(255, 255, 255, 0.08);
+		border: 4px solid var(--ink);
+		border-radius: 0;
+	}
+	.name::placeholder {
+		color: rgba(255, 255, 255, 0.4);
+	}
+	.name:focus {
+		outline: none;
+		border-color: var(--gold);
+	}
+	.label {
+		font-size: 28px;
+		color: var(--gold);
+		text-shadow: 0 3px 0 var(--violet);
 	}
 	.mirror {
 		background: rgba(255, 255, 255, 0.06);

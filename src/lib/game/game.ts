@@ -1,18 +1,15 @@
 // The game: grumpy sea creatures swim towards your squid, each showing the
 // shape it needs. Draw that shape anywhere and the squid's spell makes it a
 // friend. In easy mode nothing hurts: a creature that reaches the squid just
-// bumps it and backs off. Hard mode is faster, has 3 hearts and a game over,
-// and doesn't go easier after misses. Both are endless: every WAVE friends wins
-// a hat and things speed up a little (to a limit). A creature the child hasn't
+// bumps it and backs off, and creatures always swim at one speed. Hard mode is
+// faster, has 3 hearts and a game over. Both are endless: every WAVE friends
+// wins a hat and things get busier (and faster in hard mode), to a limit. A creature the child hasn't
 // cast yet stops, and a finger draws its shape until the child copies it.
 import { sounds, say, unlock } from './audio.ts';
 import { classify, guide, isAttempt, type Mode, type Point, type Shape } from './gestures.ts';
 import {
-	befriended,
 	finishWave,
 	firstCreatures,
-	HARD_EASE,
-	missed,
 	nextShape,
 	planWave,
 	type Plan,
@@ -143,7 +140,7 @@ export class Game {
 		return {
 			friends: this.friends,
 			wave: this.wave,
-			speed: this.pace.speed * this.ease,
+			speed: this.pace.speed,
 			creatures: this.mobs.filter((m) => m.state !== 'happy').map((m) => m.shape),
 			teaching: this.teaching()?.shape ?? null,
 			hearts: this.mode === 'hard' ? this.hearts : null,
@@ -159,12 +156,8 @@ export class Game {
 	private get mobSize() {
 		return this.h * 0.22;
 	}
-	/** Easy mode slows down after misses; hard mode doesn't. */
-	private get ease() {
-		return this.mode === 'hard' ? HARD_EASE : this.player.ease;
-	}
 	private get speed() {
-		return (this.w * 0.86 * this.pace.speed * this.ease) / 16;
+		return (this.w * 0.86 * this.pace.speed) / 16;
 	}
 
 	/** A creature whose shape the child hasn't cast yet waits, and the finger shows how. */
@@ -239,8 +232,6 @@ export class Game {
 	private miss() {
 		if (this.mode === 'hard') return;
 		this.misses++;
-		this.player.ease = missed(this.player.ease);
-		this.events.save();
 	}
 
 	// Update.
@@ -267,7 +258,7 @@ export class Game {
 				t: 0,
 				targeted: false
 			});
-			this.spawnIn = this.pace.gap / this.ease;
+			this.spawnIn = this.pace.gap;
 		}
 
 		for (const mob of this.mobs) {
@@ -343,7 +334,6 @@ export class Game {
 		mob.t = 0;
 		this.friends++;
 		this.player.stars++;
-		if (this.mode === 'easy') this.player.ease = befriended(this.player.ease);
 		this.burst({ x: mob.x, y: mob.y }, 'heart', 8, '#ff5fa2');
 		this.burst(
 			{ x: mob.x, y: mob.y },
@@ -377,14 +367,16 @@ export class Game {
 		this.events.gameOver();
 	}
 
-	/** A wave of friends: a hat, a party, and on to the next (a bit faster) wave. */
+	/** A wave of friends: a hat, a party, and on to the next (a bit busier) wave. */
 	private nextWave() {
 		const hat = finishWave(this.player, this.mode);
 		this.wave++;
 		this.pace = planWave(this.wave, this.mode);
 		this.party = 2.5;
 		sounds.fanfare();
-		say(hat ? 'A new hat!' : this.wave <= TOP_WAVE ? 'Faster!' : 'Well done!');
+		say(
+			hat ? 'A new hat!' : this.mode === 'hard' && this.wave <= TOP_WAVE ? 'Faster!' : 'Well done!'
+		);
 		this.burst({ x: this.w / 2, y: this.h * 0.4 }, 'confetti', 80, '');
 	}
 
