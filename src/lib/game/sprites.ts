@@ -411,18 +411,151 @@ export function drawThing(ctx: Ctx, s: number, thing: Thing) {
 	ctx.restore();
 }
 
-export type Creature = 'crab' | 'jelly' | 'puffer';
+export type Creature = 'crab' | 'jelly' | 'puffer' | 'fish' | 'starfish';
 export const CREATURE: Record<Shape, Creature> = {
 	zigzag: 'crab',
 	swirl: 'jelly',
 	square: 'jelly',
-	circle: 'puffer'
+	circle: 'puffer',
+	triangle: 'fish',
+	star: 'starfish'
 };
 
 export function drawCreature(ctx: Ctx, kind: Creature, s: number, t: number, happy: boolean) {
 	if (kind === 'crab') drawCrab(ctx, s, t, happy);
 	else if (kind === 'jelly') drawJelly(ctx, s, t, happy);
+	else if (kind === 'fish') drawFish(ctx, s, t, happy);
+	else if (kind === 'starfish') drawStarfish(ctx, s, t, happy);
 	else drawPuffer(ctx, s, t, happy);
+}
+
+/** An angelfish: a tall triangle of a body with stripes. */
+function drawFish(ctx: Ctx, s: number, t: number, happy: boolean) {
+	const flap = Math.sin(t * 8) * s * 0.05;
+	ctx.fillStyle = '#2ec4d6';
+	// Tail on the right: it swims left.
+	ctx.beginPath();
+	ctx.moveTo(s * 0.22, 0);
+	ctx.lineTo(s * 0.42, -s * 0.16 + flap);
+	ctx.lineTo(s * 0.42, s * 0.16 + flap);
+	ctx.fill();
+	// Top and bottom fins.
+	ctx.beginPath();
+	ctx.moveTo(-s * 0.05, -s * 0.2);
+	ctx.quadraticCurveTo(s * 0.15, -s * 0.45, s * 0.22, -s * 0.38);
+	ctx.lineTo(s * 0.15, -s * 0.12);
+	ctx.moveTo(-s * 0.05, s * 0.2);
+	ctx.quadraticCurveTo(s * 0.15, s * 0.45, s * 0.22, s * 0.38);
+	ctx.lineTo(s * 0.15, s * 0.12);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.moveTo(-s * 0.32, 0);
+	ctx.quadraticCurveTo(-s * 0.1, -s * 0.34, s * 0.24, 0);
+	ctx.quadraticCurveTo(-s * 0.1, s * 0.34, -s * 0.32, 0);
+	ctx.fillStyle = '#5ee6f0';
+	ctx.fill();
+	ctx.save();
+	ctx.clip();
+	ctx.fillStyle = '#ffe066';
+	for (const x of [-0.02, 0.12]) ctx.fillRect(x * s, -s * 0.3, s * 0.05, s * 0.6);
+	ctx.restore();
+	eyes(ctx, s, s * 0.06, -s * 0.05, s * 0.06, happy ? 1 : 0, -0.4);
+	ctx.save();
+	ctx.translate(-s * 0.1, 0);
+	if (happy) cheeks(ctx, s * 0.1, s * 0.06, s * 0.03);
+	mouth(ctx, s * 0.8, s * 0.08, happy);
+	ctx.restore();
+}
+
+/** A five-armed starfish, turning slowly. */
+function drawStarfish(ctx: Ctx, s: number, t: number, happy: boolean) {
+	ctx.save();
+	ctx.rotate(Math.sin(t * 1.5) * 0.2);
+	ctx.beginPath();
+	for (let i = 0; i < 10; i++) {
+		const a = -Math.PI / 2 + (i * Math.PI) / 5;
+		const r = i % 2 === 0 ? s * 0.38 : s * 0.17;
+		ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+	}
+	ctx.closePath();
+	ctx.fillStyle = '#ff8a5c';
+	ctx.strokeStyle = '#ff8a5c';
+	ctx.lineWidth = s * 0.08;
+	ctx.lineJoin = 'round';
+	ctx.stroke();
+	ctx.fill();
+	ctx.fillStyle = '#ffd0b8';
+	for (let i = 0; i < 5; i++) {
+		const a = -Math.PI / 2 + (i * TAU) / 5;
+		for (const f of [0.2, 0.28])
+			circle(ctx, Math.cos(a) * s * f, Math.sin(a) * s * f, s * 0.018, '#ffd0b8');
+	}
+	ctx.restore();
+	eyes(ctx, s, s * 0.07, -s * 0.03, s * 0.06, happy ? 1 : 0, -0.4);
+	if (happy) cheeks(ctx, s * 0.13, s * 0.06, s * 0.03);
+	mouth(ctx, s * 0.8, s * 0.07, happy);
+}
+
+/**
+ * The kraken: a big purple octopus in a little crown, more grumpy than scary.
+ * `mood` 0 is grumpy, -1 sulky (just hit by a spell), 1 a friend.
+ */
+export function drawKraken(ctx: Ctx, s: number, t: number, mood: number) {
+	ctx.lineCap = 'round';
+	// Eight tentacles, waving, each drawn as short strokes getting thinner.
+	for (let i = 0; i < 8; i++) {
+		const x0 = (i / 7 - 0.5) * s * 0.5;
+		const spread = (i / 7 - 0.5) * s * 0.6;
+		let px = x0;
+		let py = s * 0.02;
+		for (let k = 1; k <= 10; k++) {
+			const f = k / 10;
+			const x = x0 + spread * f + Math.sin(t * 2.5 + i * 1.3 + f * 4) * s * 0.06 * f;
+			const y = s * 0.02 + f * s * 0.42 - Math.sin(f * Math.PI) * s * 0.04;
+			ctx.beginPath();
+			ctx.moveTo(px, py);
+			ctx.lineTo(x, y);
+			ctx.strokeStyle = '#8e4fd6';
+			ctx.lineWidth = s * (0.085 - f * 0.06);
+			ctx.stroke();
+			if (k % 3 === 0) circle(ctx, x, y + s * 0.012, s * (0.018 - f * 0.008), '#e7c6ff');
+			px = x;
+			py = y;
+		}
+	}
+	const head = ctx.createRadialGradient(-s * 0.1, -s * 0.28, s * 0.03, 0, -s * 0.12, s * 0.36);
+	head.addColorStop(0, '#d9a8ff');
+	head.addColorStop(1, '#9b5de5');
+	ctx.beginPath();
+	ctx.ellipse(0, -s * 0.13, s * 0.3, s * 0.27, 0, 0, TAU);
+	ctx.fillStyle = head;
+	ctx.fill();
+	// Spots on its head.
+	ctx.globalAlpha *= 0.4;
+	circle(ctx, s * 0.16, -s * 0.27, s * 0.035, '#fff');
+	circle(ctx, s * 0.21, -s * 0.18, s * 0.02, '#fff');
+	circle(ctx, -s * 0.2, -s * 0.24, s * 0.025, '#fff');
+	ctx.globalAlpha /= 0.4;
+	// A little crown.
+	ctx.save();
+	ctx.translate(0, -s * 0.4);
+	ctx.rotate(-0.15);
+	ctx.beginPath();
+	ctx.moveTo(-s * 0.1, 0);
+	ctx.lineTo(-s * 0.11, -s * 0.09);
+	ctx.lineTo(-s * 0.05, -s * 0.04);
+	ctx.lineTo(0, -s * 0.11);
+	ctx.lineTo(s * 0.05, -s * 0.04);
+	ctx.lineTo(s * 0.11, -s * 0.09);
+	ctx.lineTo(s * 0.1, 0);
+	ctx.closePath();
+	ctx.fillStyle = '#ffc93c';
+	ctx.fill();
+	circle(ctx, 0, -s * 0.03, s * 0.017, '#ff5fa2');
+	ctx.restore();
+	eyes(ctx, s, s * 0.11, -s * 0.13, s * 0.075, mood, -0.4);
+	if (mood === 1) cheeks(ctx, s * 0.2, -s * 0.02, s * 0.04);
+	mouth(ctx, s, -s * 0.02, mood === 1);
 }
 
 function drawCrab(ctx: Ctx, s: number, t: number, happy: boolean) {

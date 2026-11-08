@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+	bossShapes,
 	finishWave,
+	isBossWave,
 	firstCreatures,
 	loadPlayers,
 	newPlayer,
@@ -71,7 +73,7 @@ describe('players', () => {
 
 describe('difficulty', () => {
 	it('teaches each shape first on wave 1', () => {
-		expect(firstCreatures(1, 'easy')).toEqual(['zigzag', 'square', 'circle']);
+		expect(firstCreatures(1, 'easy')).toEqual(['zigzag', 'square', 'circle', 'triangle']);
 		expect(firstCreatures(2, 'easy')).toEqual([]);
 	});
 
@@ -89,11 +91,30 @@ describe('difficulty', () => {
 		expect(planWave(100, 'hard')).toEqual(planWave(TOP_WAVE, 'hard'));
 	});
 
-	it('uses the swirl only in hard mode', () => {
-		expect(firstCreatures(1, 'hard')).toEqual(['zigzag', 'swirl', 'circle']);
-		const easy = Array.from({ length: 50 }, () => nextShape([], 'easy'));
-		const hard = Array.from({ length: 50 }, () => nextShape([], 'hard'));
+	it('uses the swirl and star only in hard mode', () => {
+		expect(firstCreatures(1, 'hard')).toEqual(['zigzag', 'swirl', 'circle', 'triangle', 'star']);
+		const easy = Array.from({ length: 80 }, () => nextShape([], 'easy'));
+		const hard = Array.from({ length: 80 }, () => nextShape([], 'hard'));
 		expect(easy).not.toContain('swirl');
+		expect(easy).not.toContain('star');
 		expect(hard).not.toContain('square');
+	});
+});
+
+describe('the kraken', () => {
+	it('comes every 5 waves', () => {
+		expect([1, 4, 5, 6, 10, 15, 16].filter(isBossWave)).toEqual([5, 10, 15]);
+	});
+
+	it("needs 3 spells of the mode's shapes, never the same twice in a row", () => {
+		for (let i = 0; i < 50; i++) {
+			const shapes = bossShapes('easy');
+			expect(shapes).toHaveLength(3);
+			expect(shapes.every((s) => s !== 'swirl' && s !== 'star')).toBe(true);
+			expect(shapes[0]).not.toBe(shapes[1]);
+			expect(shapes[1]).not.toBe(shapes[2]);
+		}
+		const rolls = [0.99, 0.99, 0, 0.5];
+		expect(bossShapes('hard', () => rolls.shift()!)).toEqual(['star', 'zigzag', 'circle']);
 	});
 });

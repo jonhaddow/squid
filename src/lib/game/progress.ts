@@ -131,3 +131,21 @@ export function nextShape(queue: Shape[], mode: Mode, random = Math.random): Sha
 	const shapes = SHAPES[mode];
 	return queue.shift() ?? shapes[Math.floor(random() * shapes.length)];
 }
+
+/** Every BOSS_EVERY waves (5, 10, 15...) ends with the kraken, after the wave's friends. */
+export const BOSS_EVERY = 5;
+/** Spells it takes to befriend the kraken. */
+export const BOSS_HITS = 3;
+
+export const isBossWave = (wave: number) => wave % BOSS_EVERY === 0;
+
+/** The kraken's shapes, one after another: random, but never the same twice in a row. */
+export function bossShapes(mode: Mode, random = Math.random): Shape[] {
+	const shapes = SHAPES[mode];
+	const out: Shape[] = [];
+	while (out.length < BOSS_HITS) {
+		const shape = shapes[Math.floor(random() * shapes.length)];
+		if (shape !== out[out.length - 1]) out.push(shape);
+	}
+	return out;
+}
