@@ -4,6 +4,11 @@ import { SHAPES, type Mode, type Shape } from './gestures.ts';
 
 export const HATS = ['wizard', 'crown', 'pirate', 'party', 'top', 'flower'] as const;
 export type Hat = (typeof HATS)[number];
+/** Dress-up bits that aren't won: any squid can wear them from the start. */
+export const NECKS = ['pearls', 'bowtie', 'scarf', 'medal'] as const;
+export type Neck = (typeof NECKS)[number];
+export const FACES = ['glasses', 'shades', 'hearts', 'monocle'] as const;
+export type Face = (typeof FACES)[number];
 
 export type Player = {
 	/** Body colour of their squid. */
@@ -13,17 +18,44 @@ export type Player = {
 	stars: number;
 	hats: Hat[];
 	hat: Hat | null;
+	neck: Neck | null;
+	face: Face | null;
 	/** Shapes they've cast once: the ghost finger stops showing these. */
 	learned: Shape[];
 	/** Auto difficulty: below 1 creatures swim slower, above 1 faster. */
 	ease: number;
 };
 
-export const COLORS = ['#b45cff', '#ff7a3d'];
+/** The colours to choose from in the dressing room. */
+export const PALETTE = [
+	'#b45cff',
+	'#ff7a3d',
+	'#ff5fa2',
+	'#3d8bff',
+	'#2ed8a3',
+	'#ffc93c',
+	'#ff4d4d',
+	'#8a8fa8'
+];
+/** Each squid's colour to start with. */
+export const COLORS = PALETTE.slice(0, 2);
+/** How a squid looks: what the drawing needs. */
+export type Look = Pick<Player, 'color' | 'hat' | 'neck' | 'face'>;
+
 const KEY = 'squid-spells-v1';
 
 export function newPlayer(color: string): Player {
-	return { color, level: 1, stars: 0, hats: [], hat: null, learned: [], ease: 1 };
+	return {
+		color,
+		level: 1,
+		stars: 0,
+		hats: [],
+		hat: null,
+		neck: null,
+		face: null,
+		learned: [],
+		ease: 1
+	};
 }
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
@@ -33,7 +65,12 @@ export function loadPlayers(store: Store): Player[] {
 	try {
 		const saved = JSON.parse(store.getItem(KEY) ?? 'null') as Partial<Player>[] | null;
 		if (!Array.isArray(saved)) return fresh;
-		return fresh.map((p, i) => ({ ...p, ...saved[i], color: p.color }));
+		return fresh.map((p, i) => {
+			const player = { ...p, ...saved[i] };
+			// Only colours from the palette: the drawing code needs a #rrggbb.
+			if (!PALETTE.includes(player.color)) player.color = p.color;
+			return player;
+		});
 	} catch {
 		return fresh;
 	}
@@ -56,13 +93,6 @@ export function finishWave(player: Player, mode: Mode): Hat | null {
 	}
 	if (mode === 'easy') player.level++;
 	return hat;
-}
-
-/** Tapping the hat button: the next unlocked hat, then none. */
-export function nextHat(player: Player): Hat | null {
-	const i = player.hat ? player.hats.indexOf(player.hat) : -1;
-	player.hat = player.hats[i + 1] ?? null;
-	return player.hat;
 }
 
 // Auto difficulty: a miss (a fizzled spell, or a creature bumping the squid)

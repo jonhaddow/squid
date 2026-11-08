@@ -2,14 +2,34 @@
 	import { onMount, untrack } from 'svelte';
 	import { dev, version } from '$app/env';
 	import SquidPreview from '#lib/components/SquidPreview.svelte';
+	import ThingIcon from '#lib/components/ThingIcon.svelte';
 	import { unlock, sounds } from '#lib/game/audio.ts';
 	import { Game, HEARTS } from '#lib/game/game.ts';
 	import type { Mode } from '#lib/game/gestures.ts';
-	import { loadPlayers, nextHat, savePlayers, type Player } from '#lib/game/progress.ts';
+	import type { Thing } from '#lib/game/sprites.ts';
+	import {
+		COLORS,
+		FACES,
+		HATS,
+		loadPlayers,
+		NECKS,
+		newPlayer,
+		PALETTE,
+		savePlayers,
+		type Hat,
+		type Look,
+		type Player
+	} from '#lib/game/progress.ts';
 
 	let players = $state<Player[]>([]);
 	/** The squid tapped on the start screen, now choosing easy or hard. */
 	let chosen = $state<number | null>(null);
+	/** The squid in the dressing room, choosing a colour and things to wear. */
+	let dressing = $state<number | null>(null);
+	let width = $state(800);
+	let height = $state(400);
+	/** The big squid in the dressing room. */
+	const mirror = $derived(Math.round(Math.min(340, height * 0.8, width * 0.32)));
 	/** Which kid is playing, or null on the start screen. */
 	let playing = $state<number | null>(null);
 	let mode = $state<Mode>('easy');
@@ -67,8 +87,15 @@
 
 	// Never mid-game: only on the start screen (progress is already saved).
 	$effect(() => {
-		if (updated && playing === null && chosen === null) location.reload();
+		if (updated && playing === null && chosen === null && dressing === null) location.reload();
 	});
+
+	/** The dressing room's rows of things to wear, after the colours. */
+	const RAILS = [
+		{ kind: 'hat', label: 'Hat', items: HATS, none: 'No hat' },
+		{ kind: 'neck', label: 'Neck', items: NECKS, none: 'Nothing round the neck' },
+		{ kind: 'face', label: 'Glasses', items: FACES, none: 'No glasses' }
+	] as const;
 
 	const HEART =
 		'M12 21C5 15.5 2 12.3 2 8.5A4.8 4.8 0 0 1 12 6a4.8 4.8 0 0 1 10 2.5c0 3.8-3 7-10 12.5z';
@@ -89,10 +116,16 @@
 		chosen = null;
 	}
 
-	function changeHat(i: number) {
+	function dress(i: number) {
 		unlock();
 		sounds.pop();
-		nextHat(players[i]);
+		dressing = i;
+	}
+
+	function wear(change: Partial<Look>) {
+		if (dressing === null) return;
+		sounds.pop();
+		Object.assign(players[dressing], change);
 		save();
 	}
 
@@ -150,8 +183,74 @@
 	}
 </script>
 
+<svelte:window bind:innerWidth={width} bind:innerHeight={height} />
+
+{#snippet none()}
+	<svg viewBox="0 0 24 24" aria-hidden="true"
+		><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" /><path
+			d="M6.5 17.5l11-11"
+			stroke="currentColor"
+			stroke-width="3"
+		/></svg
+	>
+{/snippet}
+
 <main>
-	{#if playing === null && chosen !== null}
+	{#if playing === null && dressing !== null}
+		{@const player = players[dressing]}
+		<section class="dress">
+			<div class="mirror" style:--squid={player.color}>
+				{#key mirror}
+					<SquidPreview look={player} size={mirror} />
+				{/key}
+			</div>
+			<div class="rails">
+				<div class="rail" role="group" aria-label="Colour">
+					{#each PALETTE as color, n (color)}
+						<button
+							class="tile swatch"
+							class:on={player.color === color}
+							style:--c={color}
+							aria-label="Colour {n + 1}"
+							aria-pressed={player.color === color}
+							onclick={() => wear({ color })}
+						></button>
+					{/each}
+				</div>
+				{#each RAILS as rail (rail.kind)}
+					<div class="rail" role="group" aria-label={rail.label}>
+						<button
+							class="tile"
+							class:on={!player[rail.kind]}
+							aria-label={rail.none}
+							aria-pressed={!player[rail.kind]}
+							onclick={() => wear({ [rail.kind]: null })}>{@render none()}</button
+						>
+						{#each rail.items as item (item)}
+							<!-- Hats are won, one a level: the rest show as shadows to play for. -->
+							{@const locked = rail.kind === 'hat' && !player.hats.includes(item as Hat)}
+							<button
+								class="tile"
+								class:on={player[rail.kind] === item}
+								class:locked
+								disabled={locked}
+								aria-label={locked ? 'Hat to win' : item}
+								aria-pressed={player[rail.kind] === item}
+								onclick={() => wear({ [rail.kind]: item })}
+							>
+								<ThingIcon thing={{ kind: rail.kind, item } as Thing} />
+							</button>
+						{/each}
+					</div>
+				{/each}
+			</div>
+			<button class="back" onclick={() => (dressing = null)} aria-label="Done">
+				<svg viewBox="0 0 24 24" aria-hidden="true"
+					><path d="M15 4l-8 8 8 8" fill="none" stroke="currentColor" stroke-width="3" /></svg
+				>
+			</button>
+		</section>
+	{:else if playing === null && chosen !== null}
 		<section class="start">
 			<div class="modes">
 				<button class="block mode easy" onclick={() => play('easy')}>
@@ -193,10 +292,10 @@
 						<button
 							class="pick"
 							onclick={() => pick(i)}
-							aria-label="Play as the {i === 0 ? 'purple' : 'orange'} squid"
+							aria-label="Play as squid {i + 1}"
 							style:--squid={player.color}
 						>
-							<SquidPreview color={player.color} hat={player.hat} />
+							<SquidPreview look={player} />
 							<span class="stars" aria-label="{player.stars} stars">
 								<svg viewBox="0 0 24 24" aria-hidden="true"
 									><path
@@ -206,13 +305,15 @@
 								{player.stars}
 							</span>
 						</button>
-						{#if player.hats.length}
-							<button class="block hat" onclick={() => changeHat(i)} aria-label="Change hat">
-								<svg viewBox="0 0 24 24" aria-hidden="true"
-									><path d="M3 20h18l-3-2-4-15-6 9-2 6z" fill="currentColor" /></svg
-								>
-							</button>
-						{/if}
+						<button class="block wardrobe" onclick={() => dress(i)} aria-label="Dress up">
+							<!-- A T-shirt. -->
+							<svg viewBox="0 0 24 24" aria-hidden="true"
+								><path
+									d="M8.5 3L2 6.5l2.5 5 2.5-1.2V21h10V10.3l2.5 1.2 2.5-5L15.5 3a3.5 3.5 0 0 1-7 0z"
+									fill="currentColor"
+								/></svg
+							>
+						</button>
 					</div>
 				{/each}
 			</div>
@@ -257,8 +358,7 @@
 				<!-- Only while it shows: its animation would cost frames during play. -->
 				{#if portrait}
 					<SquidPreview
-						color={players[playing ?? 0]?.color ?? '#b45cff'}
-						hat={players[playing ?? 0]?.hat ?? null}
+						look={players[playing ?? dressing ?? 0] ?? newPlayer(COLORS[0])}
 						size={96}
 					/>
 				{/if}
@@ -389,13 +489,84 @@
 		border: 0;
 	}
 
-	.hat {
+	.wardrobe {
 		position: absolute;
 		top: -14px;
 		right: -18px;
 		width: 52px;
 		height: 52px;
 		padding: 0;
+	}
+
+	.dress {
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 4vw;
+		/* Clear of the back button on the left. */
+		padding: env(safe-area-inset-top) env(safe-area-inset-right) 0
+			max(72px, env(safe-area-inset-left));
+		--tile: min(13vh, 5.6vw, 72px);
+	}
+	.mirror {
+		background: rgba(255, 255, 255, 0.06);
+		border: 4px solid color-mix(in srgb, var(--squid) 70%, white);
+		box-shadow:
+			0 0 0 4px var(--ink),
+			0 0 30px color-mix(in srgb, var(--squid) 60%, transparent);
+	}
+	.mirror :global(canvas) {
+		display: block;
+	}
+	.rails {
+		display: grid;
+		gap: 2.5vh;
+	}
+	.rail {
+		display: flex;
+		gap: min(1.2vw, 10px);
+	}
+	.tile {
+		width: var(--tile);
+		height: var(--tile);
+		padding: 0;
+		display: grid;
+		place-items: center;
+		background: rgba(255, 255, 255, 0.08);
+		border: 4px solid var(--ink);
+		border-radius: 0;
+		color: rgba(255, 255, 255, 0.5);
+		transition: transform 80ms;
+	}
+	.tile > svg {
+		width: 55%;
+	}
+	.tile:active {
+		transform: scale(0.92);
+	}
+	.tile.on {
+		border-color: var(--gold);
+		background: rgba(255, 224, 102, 0.18);
+		box-shadow: 0 0 16px rgba(255, 224, 102, 0.6);
+	}
+	.swatch {
+		background: var(--c);
+	}
+	.swatch.on {
+		background: var(--c);
+		border-color: #fff;
+		box-shadow:
+			0 0 0 4px var(--ink),
+			0 0 18px var(--c);
+	}
+	/* Hats not won yet: a dark shadow of the hat. */
+	.locked {
+		cursor: default;
+	}
+	.locked :global(canvas) {
+		filter: brightness(0);
+		opacity: 0.35;
 	}
 
 	@media (prefers-reduced-motion: reduce) {

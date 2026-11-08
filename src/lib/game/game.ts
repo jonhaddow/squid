@@ -442,7 +442,7 @@ export class Game {
 		ctx.translate(squid.x, squid.y);
 		if (this.spin) ctx.rotate(this.spin * Math.PI * 4);
 		if (this.party) ctx.rotate(Math.sin(this.t * 6) * 0.15);
-		art.drawSquid(ctx, squid.s, { color: this.player.color, hat: this.player.hat, t: this.t });
+		art.drawSquid(ctx, squid.s, this.player, this.t);
 		ctx.restore();
 
 		this.drawBits();

@@ -33,7 +33,12 @@ for (const [file, size, pad] of [
 			ctx.fillRect(0, 0, size, size);
 			ctx.translate(size * 0.47, size * 0.64);
 			// @ts-expect-error: the bundle's global
-			art.drawSquid(ctx, size * 0.56 * pad, { color: '#b45cff', hat: 'wizard', t: 0.4 });
+			art.drawSquid(
+				ctx,
+				size * 0.56 * pad,
+				{ color: '#b45cff', hat: 'wizard', neck: null, face: null },
+				0.4
+			);
 			return canvas.toDataURL('image/png').split(',')[1];
 		},
 		[size, pad] as const
