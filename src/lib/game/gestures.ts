@@ -62,6 +62,31 @@ function netTurning(points: Point[]): number {
 	return total;
 }
 
+/**
+ * Turns round the stroke's middle (±1 is once round). Unlike `netTurning` it
+ * can't lose a turn at a sharp corner, where a wobble decides which way a
+ * near U-turn counts, so thin and flat triangles still read as one loop.
+ */
+function winding(points: Point[]): number {
+	let cx = 0;
+	let cy = 0;
+	for (const p of points) {
+		cx += p.x / points.length;
+		cy += p.y / points.length;
+	}
+	let total = 0;
+	let prev = Math.atan2(points[0].y - cy, points[0].x - cx);
+	for (let i = 1; i < points.length; i++) {
+		const a = Math.atan2(points[i].y - cy, points[i].x - cx);
+		let d = a - prev;
+		while (d > Math.PI) d -= 2 * Math.PI;
+		while (d <= -Math.PI) d += 2 * Math.PI;
+		total += d;
+		prev = a;
+	}
+	return total / (2 * Math.PI);
+}
+
 /** How often the stroke changes direction along one axis by more than `min`. */
 function reversals(values: number[], min: number): number {
 	let count = 0;
@@ -183,13 +208,15 @@ export function classify(raw: Point[]): Shape | null {
 	const gap = Math.hypot(last.x - first.x, last.y - first.y) / size;
 	const half = Math.abs(netTurning(resample(raw, 12))) / (2 * Math.PI);
 	if (half >= 0.25 && half < 0.6 && gap > 0.65 && fill(points) >= 0.62 && back < 2) return 'arch';
+	// Once round, thin, with corners and straight sides: a triangle, any shape
+	// (tall, flat, lopsided). Counted round its middle, as sharp corners can
+	// lose a turn in `loops`.
+	const round = Math.abs(winding(points));
+	if (round >= 0.75 && round < 2 && corners >= 2 && straight >= 0.25 && fill(points) < 0.68)
+		return 'triangle';
 	if (loops >= 1.6) return 'swirl';
-	// One loop: a triangle if it's thin with corners, otherwise a circle (a square counts too).
-	if (loops >= 0.55) {
-		const full = fill(points);
-		if (corners >= 2 && straight >= 0.25 && full < 0.62) return 'triangle';
-		if (loops >= 0.65) return 'circle';
-	}
+	// Otherwise one loop is a circle (a square counts too).
+	if (loops >= 0.65) return 'circle';
 
 	if (back >= 2 && loops < 0.6) return 'zigzag';
 	return null;

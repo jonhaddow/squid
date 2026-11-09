@@ -90,6 +90,59 @@ describe('classify', () => {
 		expect(classify(draw(down, 200, 3))).toBe('triangle');
 	});
 
+	it('accepts triangles of any angles: tall, flat, right-angled and lopsided', () => {
+		const shapes: Point[][] = [
+			[
+				{ x: 0.5, y: 0 },
+				{ x: 0.6, y: 1 },
+				{ x: 0.4, y: 1 }
+			], // tall and thin
+			[
+				{ x: 0.5, y: 0.6 },
+				{ x: 1, y: 1 },
+				{ x: 0, y: 1 }
+			], // flat
+			[
+				{ x: 0.5, y: 0.75 },
+				{ x: 1, y: 1 },
+				{ x: 0, y: 1 }
+			], // very flat
+			[
+				{ x: 0.2, y: 0.6 },
+				{ x: 1, y: 1 },
+				{ x: 0, y: 1 }
+			], // obtuse
+			[
+				{ x: 0, y: 0 },
+				{ x: 1, y: 1 },
+				{ x: 0, y: 1 }
+			], // right-angled
+			[
+				{ x: 0, y: 0 },
+				{ x: 1, y: 1 },
+				{ x: 0.3, y: 1 }
+			] // leaning
+		];
+		// Drawn the way a finger does, lots of points along each side.
+		const finger = (corners: Point[]): Point[] =>
+			[...corners, corners[0]].flatMap((p, i, all) =>
+				i === all.length - 1
+					? [p]
+					: Array.from({ length: 15 }, (_, j) => ({
+							x: p.x + ((all[i + 1].x - p.x) * j) / 15,
+							y: p.y + ((all[i + 1].y - p.y) * j) / 15
+						}))
+			);
+		for (const shape of shapes)
+			for (let start = 0; start < 3; start++) {
+				const corners = [...shape.slice(start), ...shape.slice(0, start)];
+				for (let seed = 1; seed < 20; seed++) {
+					expect(classify(draw(finger(corners), 200, 4, seed))).toBe('triangle');
+					expect(classify(draw(finger([...corners].reverse()), 200, 4, seed))).toBe('triangle');
+				}
+			}
+	});
+
 	it('keeps triangles drawn round past the start as they were, and squares and diamonds as circles', () => {
 		const square = [0, 1, 2, 3, 0, 1, 2].map(
 			(i) =>
