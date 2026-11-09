@@ -117,6 +117,9 @@
 		{ kind: 'face', label: 'Glasses', items: FACES, none: 'No glasses' }
 	] as const;
 
+	/** Scrolls the board to this device's squid, if it's further down. */
+	const showMe = (li: HTMLElement) => li.scrollIntoView({ block: 'nearest' });
+
 	/** Medals for the top 3 on the leaderboard. */
 	const PLACES = ['1st', '2nd', '3rd'];
 
@@ -354,8 +357,8 @@
 						<!-- The family leaderboard: best hard-mode game, a row per device. -->
 						<ol class="board" aria-label="High scores" style:--s="{squidlet}px">
 							{#each board as row, i (i)}
-								<li class:me={row.me}>
-									<span class="place place-{i + 1}">{PLACES[i] ?? ''}</span>
+								<li class:me={row.me} {@attach row.me ? showMe : undefined}>
+									<span class="place place-{i + 1}">{PLACES[i] ?? i + 1}</span>
 									<SquidPreview look={row} size={squidlet} />
 									<span class="who">{row.name || '?'}</span>
 									<span class="score">{row.best}</span>
@@ -588,6 +591,12 @@
 		background: rgba(255, 255, 255, 0.06);
 		border: 4px solid var(--ink);
 		font-size: clamp(18px, 6vh, 28px);
+		/* Up to 20 squids: about 5 show (4.4 tuned by eye), the rest scroll. */
+		max-height: min(62vh, calc(var(--s) * 4.4));
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		scrollbar-width: thin;
+		scrollbar-color: var(--gold) transparent;
 	}
 	.board li {
 		display: flex;

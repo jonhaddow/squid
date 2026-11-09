@@ -3,7 +3,7 @@ import { FACES, HATS, NAME_MAX, NECKS, PALETTE } from '../game/progress.ts';
 import type { Entry } from '../scores.ts';
 
 /** Squids the start screen shows. */
-export const TOP = 5;
+export const TOP = 20;
 
 /** Checks a posted entry, or null if it's not one the game would send. */
 export function parseEntry(body: unknown): Entry | null {
