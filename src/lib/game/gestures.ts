@@ -207,12 +207,14 @@ export function classify(raw: Point[]): Shape | null {
 	const last = points[points.length - 1];
 	const gap = Math.hypot(last.x - first.x, last.y - first.y) / size;
 	const half = Math.abs(netTurning(resample(raw, 12))) / (2 * Math.PI);
-	if (half >= 0.25 && half < 0.6 && gap > 0.65 && fill(points) >= 0.62 && back < 2) return 'arch';
+	const full = fill(points);
+	if (half >= 0.25 && half < 0.6 && gap > 0.65 && full >= 0.62 && back < 2) return 'arch';
 	// Once round, thin, with corners and straight sides: a triangle, any shape
 	// (tall, flat, lopsided). Counted round its middle, as sharp corners can
-	// lose a turn in `loops`.
+	// lose a turn in `loops`; still a swirl if `loops` says so. Fill up to 0.68,
+	// as wobble fattens thin ones (squares are about 0.9, circles 0.8).
 	const round = Math.abs(winding(points));
-	if (round >= 0.75 && round < 2 && corners >= 2 && straight >= 0.25 && fill(points) < 0.68)
+	if (round >= 0.75 && loops < 1.6 && corners >= 2 && straight >= 0.25 && full < 0.68)
 		return 'triangle';
 	if (loops >= 1.6) return 'swirl';
 	// Otherwise one loop is a circle (a square counts too).

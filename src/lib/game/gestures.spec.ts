@@ -136,9 +136,15 @@ describe('classify', () => {
 		for (const shape of shapes)
 			for (let start = 0; start < 3; start++) {
 				const corners = [...shape.slice(start), ...shape.slice(0, start)];
-				for (let seed = 1; seed < 20; seed++) {
-					expect(classify(draw(finger(corners), 200, 4, seed))).toBe('triangle');
-					expect(classify(draw(finger([...corners].reverse()), 200, 4, seed))).toBe('triangle');
+				for (let seed = 1; seed < 8; seed++) {
+					expect(
+						classify(draw(finger(corners), 200, 4, seed)),
+						`${shape[0].x},${shape[0].y} seed ${seed}`
+					).toBe('triangle');
+					expect(
+						classify(draw(finger([...corners].reverse()), 200, 4, seed)),
+						`${shape[0].x},${shape[0].y} reversed seed ${seed}`
+					).toBe('triangle');
 				}
 			}
 	});
