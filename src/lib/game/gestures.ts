@@ -1,5 +1,6 @@
 // Tells which spell shape a finger drew: a circle (shield), a zigzag (zap), a
-// swirl (bubbles), a triangle (fins) or a half circle, an arch (a rainbow, for the sea turtle).
+// swirl (bubbles), a triangle (fins) or a half circle, an arch (a rainbow, for
+// the sea turtle).
 // Forgiving on purpose: a 6 year old's wobbly circle counts.
 // It works on how much the line turns overall, so size, speed, direction and
 // where on the screen it was drawn don't matter.
@@ -114,7 +115,8 @@ function angles(points: Point[]): { corners: number; straight: number } {
 /**
  * How much of its bounding box a loop's outline fills, with the box turned to
  * fit best: about 0.9 for a square (even drawn as a diamond), 0.8 a circle,
- * under 0.5 a triangle.
+ * under 0.5 a triangle. Keeps squares, which count as circles, from reading as
+ * triangles.
  */
 function fill(points: Point[]): number {
 	// The outline's area, so drawing round twice or leaving a gap doesn't change it.
