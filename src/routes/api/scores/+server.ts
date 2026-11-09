@@ -40,7 +40,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				Date.now()
 			)
 			.run();
-	const [b, t] = await env.DB.batch<Omit<Row, 'me'> & { me: number }>([best, total]);
-	const rows = (r: typeof b) => r.results.map((row) => ({ ...row, me: !!row.me }));
-	return json({ best: rows(b), total: rows(t) } satisfies Boards);
+	const [bestRows, totalRows] = await env.DB.batch<Omit<Row, 'me'> & { me: number }>([best, total]);
+	const rows = (r: typeof bestRows) => r.results.map((row) => ({ ...row, me: !!row.me }));
+	return json({ best: rows(bestRows), total: rows(totalRows) } satisfies Boards);
 };

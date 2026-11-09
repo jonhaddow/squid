@@ -8,6 +8,7 @@ export const TOP = 20;
 /** Checks a posted entry, or null if it's not one the game would send. */
 export function parseEntry(body: unknown): Entry | null {
 	if (!body || typeof body !== 'object') return null;
+	// Older games send no total.
 	const { device, name, color, hat, neck, face, best, total = 0 } = body as Record<string, unknown>;
 	if (typeof device !== 'string' || !/^[\w-]{16,64}$/.test(device)) return null;
 	if (typeof name !== 'string' || typeof color !== 'string' || !PALETTE.includes(color))
@@ -25,9 +26,9 @@ export function parseEntry(body: unknown): Entry | null {
 	};
 }
 
-/** A whole number of friends, from 0 to a lot. Older games send no total. */
+/** A whole number of friends, from 0 to a lot. */
 const isCount = (n: unknown) =>
-	Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 10_000_000;
+	Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 1_000_000;
 
 /** One of `items`, or nothing (an older game sends none). */
 function pick<T extends string>(items: readonly T[], value: unknown): T | null {

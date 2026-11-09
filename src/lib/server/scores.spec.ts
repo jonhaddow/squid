@@ -46,7 +46,7 @@ describe('parseEntry', () => {
 			{ ...ok, best: -1 },
 			{ ...ok, best: 2.5 },
 			{ ...ok, best: '9' },
-			{ ...ok, best: 1e9 },
+			{ ...ok, best: 1e7 },
 			{ ...ok, total: -1 },
 			{ ...ok, total: '9' }
 		])

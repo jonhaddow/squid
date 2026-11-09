@@ -34,6 +34,17 @@
 	/** Which board shows: best game or all games. */
 	let view = $state<keyof Boards>('best');
 	const board = $derived(boards[view]);
+	/** A trophy, on the Challenge button and the best-game board's button. */
+	const TROPHY =
+		'M7 3h10v2h3.5v2.5a4 4 0 0 1-4.2 4A5.5 5.5 0 0 1 13 14v3h3v3H8v-3h3v-3a5.5 5.5 0 0 1-3.3-2.5 4 4 0 0 1-4.2-4V5H7zM5.5 7v.5a2 2 0 0 0 1.6 2A6 6 0 0 1 7 7zm13 0H17a6 6 0 0 1-.1 2.5 2 2 0 0 0 1.6-2z';
+	/** A star, moved to (x, y) by its top point. */
+	const star = (x: number, y: number) =>
+		`M${x} ${y}l1.6 3.4 3.7.4-2.8 2.5.8 3.7-3.3-1.9-3.3 1.9.8-3.7-2.8-2.5 3.7-.4z`;
+	/** The board's two views: best game (a trophy) and all games added up (a pile of stars). */
+	const VIEWS = [
+		{ key: 'best', label: 'Best game', icon: [TROPHY] },
+		{ key: 'total', label: 'All games', icon: [star(12, 1), star(6, 11), star(18, 11)] }
+	] as const;
 	let width = $state(800);
 	let height = $state(400);
 	/** The big squid in the dressing room. */
@@ -108,7 +119,10 @@
 		if (!home || !loaded) return;
 		let live = true;
 		void syncScores(untrack(() => $state.snapshot(player))).then((rows) => {
-			if (live && rows) boards = rows;
+			if (!live || !rows) return;
+			boards = rows;
+			// Only Chill played so far: open on the board that has someone on it.
+			if (!rows.best.length) view = 'total';
 		});
 		return () => (live = false);
 	});
@@ -310,10 +324,7 @@
 				</button>
 				<button class="block mode hard" onclick={() => play('hard')}>
 					<svg viewBox="0 0 24 24" aria-hidden="true">
-						<path
-							d="M7 3h10v2h3.5v2.5a4 4 0 0 1-4.2 4A5.5 5.5 0 0 1 13 14v3h3v3H8v-3h3v-3a5.5 5.5 0 0 1-3.3-2.5 4 4 0 0 1-4.2-4V5H7zM5.5 7v.5a2 2 0 0 0 1.6 2A6 6 0 0 1 7 7zm13 0H17a6 6 0 0 1-.1 2.5 2 2 0 0 0 1.6-2z"
-							fill="currentColor"
-						/>
+						<path d={TROPHY} fill="currentColor" />
 						<path
 							d="M12 5.5l.9 1.9 2 .2-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.2z"
 							fill="#ff6b8b"
@@ -360,39 +371,19 @@
 						<!-- The family leaderboards, a row per device: best hard-mode game, or friends in all games. -->
 						<div class="boards">
 							<div class="views">
-								<button
-									class="block"
-									class:on={view === 'best'}
-									aria-pressed={view === 'best'}
-									aria-label="Best game"
-									onclick={() => (view = 'best')}
-								>
-									<!-- A trophy, as on the Challenge button. -->
-									<svg viewBox="0 0 24 24" aria-hidden="true"
-										><path
-											d="M7 3h10v2h3.5v2.5a4 4 0 0 1-4.2 4A5.5 5.5 0 0 1 13 14v3h3v3H8v-3h3v-3a5.5 5.5 0 0 1-3.3-2.5 4 4 0 0 1-4.2-4V5H7zM5.5 7v.5a2 2 0 0 0 1.6 2A6 6 0 0 1 7 7zm13 0H17a6 6 0 0 1-.1 2.5 2 2 0 0 0 1.6-2z"
-											fill="currentColor"
-										/></svg
+								{#each VIEWS as v (v.key)}
+									<button
+										class="block"
+										class:on={view === v.key}
+										aria-pressed={view === v.key}
+										aria-label={v.label}
+										onclick={() => (view = v.key)}
 									>
-								</button>
-								<button
-									class="block"
-									class:on={view === 'total'}
-									aria-pressed={view === 'total'}
-									aria-label="All games"
-									onclick={() => (view = 'total')}
-								>
-									<!-- A pile of stars: every game added up. -->
-									<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"
-										><path
-											d="M6 11l1.6 3.4 3.7.4-2.8 2.5.8 3.7L6 19.1 2.7 21l.8-3.7L.7 14.8l3.7-.4z"
-										/><path
-											d="M18 11l1.6 3.4 3.7.4-2.8 2.5.8 3.7L18 19.1 14.7 21l.8-3.7-2.8-2.5 3.7-.4z"
-										/><path
-											d="M12 1l1.6 3.4 3.7.4-2.8 2.5.8 3.7L12 9.1 8.7 11l.8-3.7L6.7 4.8l3.7-.4z"
-										/></svg
-									>
-								</button>
+										<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+											{#each v.icon as d (d)}<path {d} />{/each}
+										</svg>
+									</button>
+								{/each}
 							</div>
 							<ol class="board" aria-label="High scores" style:--s="{squidlet}px">
 								{#each board as row, i (i)}
