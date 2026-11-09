@@ -25,7 +25,6 @@ describe('classify', () => {
 		expect(classify(draw(guide('circle')))).toBe('circle');
 		expect(classify(draw(guide('swirl')))).toBe('swirl');
 		expect(classify(draw(guide('zigzag')))).toBe('zigzag');
-		expect(classify(draw(guide('square')))).toBe('square');
 		expect(classify(draw(guide('triangle')))).toBe('triangle');
 		expect(classify(draw(guide('arch')))).toBe('arch');
 	});
@@ -91,7 +90,7 @@ describe('classify', () => {
 		expect(classify(draw(down, 200, 3))).toBe('triangle');
 	});
 
-	it('keeps squares and triangles drawn round past the start, and diamonds, as they were', () => {
+	it('keeps triangles drawn round past the start as they were, and squares and diamonds as circles', () => {
 		const square = [0, 1, 2, 3, 0, 1, 2].map(
 			(i) =>
 				[
@@ -118,9 +117,9 @@ describe('classify', () => {
 			{ x: 0.5, y: 0 }
 		];
 		for (let seed = 1; seed < 30; seed++) {
-			expect(classify(draw(square, 200, 4, seed))).toBe('square');
+			expect(classify(draw(square, 200, 4, seed))).toBe('circle');
 			expect(classify(draw(tri, 200, 4, seed))).toBe('triangle');
-			expect(classify(draw(diamond, 200, 4, seed))).toBe('square');
+			expect(classify(draw(diamond, 200, 4, seed))).toBe('circle');
 		}
 	});
 
@@ -136,11 +135,11 @@ describe('classify', () => {
 		for (let seed = 1; seed < 100; seed++) {
 			expect(classify(draw(arc(1.2), 200, 8, seed))).toBe('circle');
 			expect(classify(draw(arc(2.2, 120, true), 200, 6, seed))).toBe('swirl');
-			expect(classify(draw(box, 200, 5, seed))).toBe('square');
+			expect(classify(draw(box, 200, 5, seed))).toBe('circle');
 		}
 	});
 
-	it('accepts squares and rectangles, wobbly or with rounded corners, from any corner', () => {
+	it('counts squares and rectangles, wobbly or with rounded corners, as circles', () => {
 		const box = (w: number, h: number): Point[] => [
 			{ x: 0, y: 0 },
 			{ x: w, y: 0 },
@@ -148,9 +147,9 @@ describe('classify', () => {
 			{ x: 0, y: h },
 			{ x: 0, y: 0 }
 		];
-		expect(classify(draw(box(1, 1), 200, 5))).toBe('square');
-		expect(classify(draw(box(1, 0.6), 220, 4))).toBe('square');
-		expect(classify(draw([...box(1, 1)].reverse(), 150))).toBe('square');
+		expect(classify(draw(box(1, 1), 200, 5))).toBe('circle');
+		expect(classify(draw(box(1, 0.6), 220, 4))).toBe('circle');
+		expect(classify(draw([...box(1, 1)].reverse(), 150))).toBe('circle');
 		// Started halfway along a side.
 		const mid: Point[] = [
 			{ x: 0.5, y: 0 },
@@ -160,7 +159,7 @@ describe('classify', () => {
 			{ x: 0, y: 0 },
 			{ x: 0.5, y: 0 }
 		];
-		expect(classify(draw(mid, 180, 3))).toBe('square');
+		expect(classify(draw(mid, 180, 3))).toBe('circle');
 		// Rounded corners: each corner cut by an eighth of a side.
 		const round: Point[] = [
 			{ x: 0.12, y: 0 },
@@ -173,12 +172,7 @@ describe('classify', () => {
 			{ x: 0, y: 0.12 },
 			{ x: 0.12, y: 0 }
 		];
-		expect(classify(draw(round, 200))).toBe('square');
-	});
-
-	it('never mistakes a wobbly circle for a square', () => {
-		for (let seed = 1; seed < 100; seed++)
-			expect(classify(draw(arc(1), 200, 5, seed))).toBe('circle');
+		expect(classify(draw(round, 200))).toBe('circle');
 	});
 
 	it('accepts wobbly circles, either way round, overshooting or a bit short', () => {

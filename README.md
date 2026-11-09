@@ -1,6 +1,6 @@
 # Squid Spells
 
-A drawing-spells game for Jon's kids (6 and 8), at https://squid.app.haddow.me. You're a squid wizard under the sea. Grumpy crabs, jellyfish, pufferfish and angelfish swim at you, each showing a shape. Draw it anywhere to cast the spell (zigzag: zap, circle: shield, triangle: fins, and for the jellyfish a square in easy mode or a swirl in hard) and they turn into friends.
+A drawing-spells game for Jon's kids (6 and 8), at https://squid.app.haddow.me. You're a squid wizard under the sea. Grumpy crabs, jellyfish, pufferfish and angelfish swim at you, each showing a shape. Draw it anywhere to cast the spell (zigzag: zap, circle: shield, triangle: fins, swirl: bubbles for the jellyfish) and they turn into friends.
 
 Every 3rd wave (3, 6, 9...) ends with the kraken: the other creatures swim off, and it needs 3 spells, a random shape each, to become a friend.
 

@@ -544,7 +544,6 @@ export type Creature = 'crab' | 'jelly' | 'puffer' | 'fish' | 'turtle';
 export const CREATURE: Record<Shape, Creature> = {
 	zigzag: 'crab',
 	swirl: 'jelly',
-	square: 'jelly',
 	circle: 'puffer',
 	triangle: 'fish',
 	arch: 'turtle'

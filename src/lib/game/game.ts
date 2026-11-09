@@ -137,7 +137,7 @@ export class Game {
 	) {
 		this.ctx = canvas.getContext('2d')!;
 		this.wave = mode === 'hard' ? 1 : player.level;
-		this.queue = firstCreatures(this.wave, mode);
+		this.queue = firstCreatures(this.wave);
 		this.pace = planWave(this.wave, mode);
 		this.resize();
 	}
@@ -262,7 +262,7 @@ export class Game {
 		if (target.shape === 'zigzag') {
 			sounds.zap();
 			this.flash = 1;
-		} else if (target.shape === 'swirl' || target.shape === 'square') sounds.bubbles();
+		} else if (target.shape === 'swirl') sounds.bubbles();
 		else if (target.shape === 'triangle') sounds.twinkle();
 		else if (target.shape === 'arch') sounds.rainbow();
 		else sounds.shield();
@@ -295,7 +295,7 @@ export class Game {
 			!teaching
 		) {
 			this.mobs.push({
-				shape: nextShape(this.queue, this.mode),
+				shape: nextShape(this.queue),
 				x: this.w + m,
 				y: this.h * (0.22 + Math.random() * 0.48),
 				phase: Math.random() * 10,
@@ -441,7 +441,7 @@ export class Game {
 	private startKraken() {
 		this.fighting = true;
 		for (const mob of this.mobs) if (isOpen(mob) && !mob.targeted) mob.state = 'leave';
-		const [first, ...rest] = bossShapes(this.mode);
+		const [first, ...rest] = bossShapes();
 		this.krakenShapes = rest;
 		this.mobs.push({
 			shape: first,
@@ -614,7 +614,7 @@ export class Game {
 				ctx.stroke();
 			}
 			ctx.restore();
-		} else if (spell.shape === 'swirl' || spell.shape === 'square') {
+		} else if (spell.shape === 'swirl') {
 			for (let i = 0; i < 6; i++) {
 				const k = Math.max(0, f - i * 0.06);
 				const x = from.x + (to.x - from.x) * k;
