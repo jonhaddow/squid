@@ -166,12 +166,10 @@ export function planWave(wave: number, mode: Mode): Plan {
 }
 
 /** A fresh start meets one of each kind first, so each can be taught; then they're random. */
-export const firstCreatures = (wave: number, mode: Mode): Shape[] =>
-	wave === 1 ? [...SHAPES[mode]] : [];
+export const firstCreatures = (wave: number): Shape[] => (wave === 1 ? [...SHAPES] : []);
 
-export function nextShape(queue: Shape[], mode: Mode, random = Math.random): Shape {
-	const shapes = SHAPES[mode];
-	return queue.shift() ?? shapes[Math.floor(random() * shapes.length)];
+export function nextShape(queue: Shape[], random = Math.random): Shape {
+	return queue.shift() ?? SHAPES[Math.floor(random() * SHAPES.length)];
 }
 
 /** Every BOSS_EVERY waves (3, 6, 9...) ends with the kraken, after the wave's friends. */
@@ -182,11 +180,10 @@ export const BOSS_HITS = 3;
 export const isBossWave = (wave: number) => wave % BOSS_EVERY === 0;
 
 /** The kraken's shapes, one after another: random, but never the same twice in a row. */
-export function bossShapes(mode: Mode, random = Math.random): Shape[] {
-	const shapes = SHAPES[mode];
+export function bossShapes(random = Math.random): Shape[] {
 	const out: Shape[] = [];
 	while (out.length < BOSS_HITS) {
-		const shape = shapes[Math.floor(random() * shapes.length)];
+		const shape = SHAPES[Math.floor(random() * SHAPES.length)];
 		if (shape !== out[out.length - 1]) out.push(shape);
 	}
 	return out;

@@ -1,20 +1,17 @@
 // Tells which spell shape a finger drew: a circle (shield), a zigzag (zap), a
-// swirl (bubbles, hard mode), a square (bubbles, easy mode), a triangle
-// (fins) or a half circle, an arch (a rainbow, for the sea turtle).
+// swirl (bubbles), a triangle (fins) or a half circle, an arch (a rainbow, for
+// the sea turtle).
 // Forgiving on purpose: a 6 year old's wobbly circle counts.
 // It works on how much the line turns overall, so size, speed, direction and
 // where on the screen it was drawn don't matter.
 
-export type Shape = 'circle' | 'zigzag' | 'swirl' | 'square' | 'triangle' | 'arch';
+export type Shape = 'circle' | 'zigzag' | 'swirl' | 'triangle' | 'arch';
 export type Point = { x: number; y: number };
 
 export type Mode = 'easy' | 'hard';
 
-/** The shapes each mode uses: easy swaps the swirl for a square. */
-export const SHAPES: Record<Mode, Shape[]> = {
-	easy: ['zigzag', 'square', 'circle', 'triangle', 'arch'],
-	hard: ['zigzag', 'swirl', 'circle', 'triangle', 'arch']
-};
+/** The shapes both modes use, in teaching order. */
+export const SHAPES: Shape[] = ['zigzag', 'swirl', 'circle', 'triangle', 'arch'];
 
 /** Strokes smaller than this (CSS px across) are taps, not shapes. */
 const MIN_SIZE = 40;
@@ -92,9 +89,9 @@ function reversals(values: number[], min: number): number {
 }
 
 /**
- * Corners and straight sides, to tell a square or triangle from smooth
+ * Corners and straight sides, to tell a triangle from smooth
  * curves. Looks at how much the line turns over a few samples at each point: a
- * circle or swirl turns a steady amount everywhere, a square turns almost
+ * circle or swirl turns a steady amount everywhere, a triangle turns almost
  * nowhere apart from its corners (one more if the drawing starts mid-side).
  */
 function angles(points: Point[]): { corners: number; straight: number } {
@@ -118,7 +115,8 @@ function angles(points: Point[]): { corners: number; straight: number } {
 /**
  * How much of its bounding box a loop's outline fills, with the box turned to
  * fit best: about 0.9 for a square (even drawn as a diamond), 0.8 a circle,
- * under 0.5 a triangle.
+ * under 0.5 a triangle. Keeps squares, which count as circles, from reading as
+ * triangles.
  */
 function fill(points: Point[]): number {
 	// The outline's area, so drawing round twice or leaving a gap doesn't change it.
@@ -186,11 +184,11 @@ export function classify(raw: Point[]): Shape | null {
 	const half = Math.abs(netTurning(resample(raw, 12))) / (2 * Math.PI);
 	if (half >= 0.25 && half < 0.6 && gap > 0.65 && fill(points) >= 0.62 && back < 2) return 'arch';
 	if (loops >= 1.6) return 'swirl';
-	// One loop: a triangle if it's thin with corners, a square if it's full with corners, otherwise a circle.
+	// One loop: a triangle if it's thin with corners, otherwise a circle (a square counts too).
 	if (loops >= 0.55) {
 		const full = fill(points);
 		if (corners >= 2 && straight >= 0.25 && full < 0.62) return 'triangle';
-		if (loops >= 0.65) return corners >= 3 && straight >= 0.3 && full >= 0.62 ? 'square' : 'circle';
+		if (loops >= 0.65) return 'circle';
 	}
 
 	if (back >= 2 && loops < 0.6) return 'zigzag';
@@ -217,17 +215,6 @@ export function guide(shape: Shape, n = 60): Point[] {
 		if (shape === 'circle') {
 			const a = -Math.PI / 2 + t * Math.PI * 2;
 			out.push({ x: 0.5 + 0.5 * Math.cos(a), y: 0.5 + 0.5 * Math.sin(a) });
-		} else if (shape === 'square') {
-			// Clockwise from the top left corner.
-			const side = Math.min(3, Math.floor(t * 4));
-			const f = t * 4 - side;
-			const [x, y] = [
-				[f, 0],
-				[1, f],
-				[1 - f, 1],
-				[0, 1 - f]
-			][side];
-			out.push({ x: 0.1 + 0.8 * x, y: 0.1 + 0.8 * y });
 		} else if (shape === 'triangle') {
 			// Clockwise from the top point.
 			const side = Math.min(2, Math.floor(t * 3));
