@@ -355,7 +355,7 @@
 						<ol class="board" aria-label="High scores" style:--s="{squidlet}px">
 							{#each board as row, i (i)}
 								<li class:me={row.me}>
-									<span class="place place-{i + 1}">{PLACES[i] ?? ''}</span>
+									<span class="place place-{i + 1}">{PLACES[i] ?? i + 1}</span>
 									<SquidPreview look={row} size={squidlet} />
 									<span class="who">{row.name || '?'}</span>
 									<span class="score">{row.best}</span>
@@ -588,6 +588,12 @@
 		background: rgba(255, 255, 255, 0.06);
 		border: 4px solid var(--ink);
 		font-size: clamp(18px, 6vh, 28px);
+		/* Up to 20 squids: about 5 show, the rest scroll. */
+		max-height: min(62vh, calc(var(--s) * 4.4));
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		scrollbar-width: thin;
+		scrollbar-color: var(--gold) transparent;
 	}
 	.board li {
 		display: flex;
