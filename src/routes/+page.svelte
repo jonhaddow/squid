@@ -20,7 +20,7 @@
 		savePlayer,
 		type Look
 	} from '#lib/game/progress.ts';
-	import { syncScores, type Row } from '#lib/scores.ts';
+	import { syncScores, type Boards } from '#lib/scores.ts';
 
 	/** The device's one squid. Fresh until the save loads, and not shown till then. */
 	let player = $state(newPlayer());
@@ -30,7 +30,21 @@
 	/** In the dressing room, choosing a colour and things to wear. */
 	let dressing = $state(false);
 	/** The family leaderboard, once it's loaded (it stays empty offline). */
-	let board = $state<Row[]>([]);
+	let boards = $state<Boards>({ best: [], total: [] });
+	/** Which board shows: best game or all games. */
+	let view = $state<keyof Boards>('best');
+	const board = $derived(boards[view]);
+	/** A trophy, on the Challenge button and the best-game board's button. */
+	const TROPHY =
+		'M7 3h10v2h3.5v2.5a4 4 0 0 1-4.2 4A5.5 5.5 0 0 1 13 14v3h3v3H8v-3h3v-3a5.5 5.5 0 0 1-3.3-2.5 4 4 0 0 1-4.2-4V5H7zM5.5 7v.5a2 2 0 0 0 1.6 2A6 6 0 0 1 7 7zm13 0H17a6 6 0 0 1-.1 2.5 2 2 0 0 0 1.6-2z';
+	/** A star, moved to (x, y) by its top point. */
+	const star = (x: number, y: number) =>
+		`M${x} ${y}l1.6 3.4 3.7.4-2.8 2.5.8 3.7-3.3-1.9-3.3 1.9.8-3.7-2.8-2.5 3.7-.4z`;
+	/** The board's two views: best game (a trophy) and all games added up (a pile of stars). */
+	const VIEWS = [
+		{ key: 'best', label: 'Best game', icon: [TROPHY] },
+		{ key: 'total', label: 'All games', icon: [star(12, 1), star(6, 11), star(18, 11)] }
+	] as const;
 	let width = $state(800);
 	let height = $state(400);
 	/** The big squid in the dressing room. */
@@ -105,7 +119,10 @@
 		if (!home || !loaded) return;
 		let live = true;
 		void syncScores(untrack(() => $state.snapshot(player))).then((rows) => {
-			if (live && rows) board = rows;
+			if (!live || !rows) return;
+			boards = rows;
+			// Only Chill played so far: open on the board that has someone on it.
+			if (!rows.best.length) view = 'total';
 		});
 		return () => (live = false);
 	});
@@ -307,10 +324,7 @@
 				</button>
 				<button class="block mode hard" onclick={() => play('hard')}>
 					<svg viewBox="0 0 24 24" aria-hidden="true">
-						<path
-							d="M7 3h10v2h3.5v2.5a4 4 0 0 1-4.2 4A5.5 5.5 0 0 1 13 14v3h3v3H8v-3h3v-3a5.5 5.5 0 0 1-3.3-2.5 4 4 0 0 1-4.2-4V5H7zM5.5 7v.5a2 2 0 0 0 1.6 2A6 6 0 0 1 7 7zm13 0H17a6 6 0 0 1-.1 2.5 2 2 0 0 0 1.6-2z"
-							fill="currentColor"
-						/>
+						<path d={TROPHY} fill="currentColor" />
 						<path
 							d="M12 5.5l.9 1.9 2 .2-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.2z"
 							fill="#ff6b8b"
@@ -353,18 +367,35 @@
 						</button>
 						{#if player.name}<p class="label">{player.name}</p>{/if}
 					</div>
-					{#if board.length}
-						<!-- The family leaderboard: best hard-mode game, a row per device. -->
-						<ol class="board" aria-label="High scores" style:--s="{squidlet}px">
-							{#each board as row, i (i)}
-								<li class:me={row.me} {@attach row.me ? showMe : undefined}>
-									<span class="place place-{i + 1}">{PLACES[i] ?? i + 1}</span>
-									<SquidPreview look={row} size={squidlet} />
-									<span class="who">{row.name || '?'}</span>
-									<span class="score">{row.best}</span>
-								</li>
-							{/each}
-						</ol>
+					{#if boards.best.length || boards.total.length}
+						<!-- The family leaderboards, a row per device: best hard-mode game, or friends in all games. -->
+						<div class="boards">
+							<div class="views">
+								{#each VIEWS as v (v.key)}
+									<button
+										class="block"
+										class:on={view === v.key}
+										aria-pressed={view === v.key}
+										aria-label={v.label}
+										onclick={() => (view = v.key)}
+									>
+										<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+											{#each v.icon as d (d)}<path {d} />{/each}
+										</svg>
+									</button>
+								{/each}
+							</div>
+							<ol class="board" aria-label="High scores" style:--s="{squidlet}px">
+								{#each board as row, i (i)}
+									<li class:me={row.me} {@attach row.me ? showMe : undefined}>
+										<span class="place place-{i + 1}">{PLACES[i] ?? i + 1}</span>
+										<SquidPreview look={row} size={squidlet} />
+										<span class="who">{row.name || '?'}</span>
+										<span class="score">{row[view]}</span>
+									</li>
+								{/each}
+							</ol>
+						</div>
 					{/if}
 				</div>
 			{/if}
@@ -581,6 +612,27 @@
 		text-shadow: 0 4px 0 var(--violet);
 	}
 
+	.boards {
+		display: grid;
+		gap: 10px;
+	}
+	.views {
+		display: flex;
+		justify-content: center;
+		gap: 10px;
+	}
+	.views .block {
+		width: clamp(56px, 16vh, 84px);
+		height: clamp(40px, 11vh, 56px);
+		opacity: 0.55;
+	}
+	.views .block svg {
+		width: auto;
+		height: 75%;
+	}
+	.views .on {
+		opacity: 1;
+	}
 	.board {
 		margin: 0;
 		padding: 10px 14px;

@@ -412,6 +412,7 @@ export class Game {
 			}
 		} else {
 			this.friends++;
+			this.player.total++;
 			if (this.mode === 'hard') this.player.best = Math.max(this.player.best, this.friends);
 			if (this.friends % WAVE === 0) {
 				if (isBossWave(this.wave)) this.startKraken();

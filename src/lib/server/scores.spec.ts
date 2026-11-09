@@ -13,7 +13,8 @@ describe('parseEntry', () => {
 				hat: 'crown',
 				neck: 'scarf',
 				face: 'shades',
-				best: 23
+				best: 23,
+				total: 140
 			})
 		).toEqual({
 			device,
@@ -22,14 +23,15 @@ describe('parseEntry', () => {
 			hat: 'crown',
 			neck: 'scarf',
 			face: 'shades',
-			best: 23
+			best: 23,
+			total: 140
 		});
 	});
 
 	it("drops things to wear it doesn't know, as from an older game", () => {
 		expect(
 			parseEntry({ device, name: 'Ada', color: '#ff7a3d', hat: 'helmet', best: 1 })
-		).toMatchObject({ hat: null, neck: null, face: null });
+		).toMatchObject({ hat: null, neck: null, face: null, total: 0 });
 	});
 
 	it('turns away anything else', () => {
@@ -44,7 +46,9 @@ describe('parseEntry', () => {
 			{ ...ok, best: -1 },
 			{ ...ok, best: 2.5 },
 			{ ...ok, best: '9' },
-			{ ...ok, best: 1e9 }
+			{ ...ok, best: 1e7 },
+			{ ...ok, total: -1 },
+			{ ...ok, total: '9' }
 		])
 			expect(parseEntry(bad)).toBeNull();
 	});

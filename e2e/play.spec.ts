@@ -95,26 +95,44 @@ test('hard mode keeps going and speeds up every 10 friends', async ({ page }) =>
 	// The best hard game so far is saved, for the leaderboard.
 	const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('squid-spells-v1')!)[0]);
 	expect(saved.best).toBeGreaterThanOrEqual(10);
+	expect(saved.total).toBeGreaterThanOrEqual(10);
 });
 
-test('the start screen posts the best game and shows the leaderboard', async ({ page }) => {
+test('the start screen posts the scores and shows both leaderboards', async ({ page }) => {
 	await page.addInitScript(() =>
-		localStorage.setItem('squid-spells-v1', JSON.stringify([{ name: 'Inky', best: 14 }]))
+		localStorage.setItem('squid-spells-v1', JSON.stringify([{ name: 'Inky', best: 14, total: 50 }]))
 	);
 	const posted: unknown[] = [];
 	await page.route('/api/scores', (route) => {
 		posted.push(route.request().postDataJSON());
-		return route.fulfill({
-			json: [
-				{ name: 'Inky', color: '#b45cff', hat: null, neck: null, face: null, best: 14, me: true },
-				{ name: 'Blub', color: '#ff7a3d', hat: 'crown', neck: null, face: null, best: 9, me: false }
-			]
-		});
+		const inky = {
+			name: 'Inky',
+			color: '#b45cff',
+			hat: null,
+			neck: null,
+			face: null,
+			best: 14,
+			total: 50,
+			me: true
+		};
+		const blub = {
+			name: 'Blub',
+			color: '#ff7a3d',
+			hat: 'crown',
+			neck: null,
+			face: null,
+			best: 9,
+			total: 80,
+			me: false
+		};
+		return route.fulfill({ json: { best: [inky, blub], total: [blub, inky] } });
 	});
 	await page.goto('/');
 	const board = page.getByRole('list', { name: 'High scores' });
 	await expect(board.getByRole('listitem')).toHaveText([/1st\s*Inky\s*14/, /2nd\s*Blub\s*9/]);
-	expect(posted[0]).toMatchObject({ name: 'Inky', best: 14, color: '#b45cff' });
+	expect(posted[0]).toMatchObject({ name: 'Inky', best: 14, total: 50, color: '#b45cff' });
+	await page.getByLabel('All games').click();
+	await expect(board.getByRole('listitem')).toHaveText([/1st\s*Blub\s*80/, /2nd\s*Inky\s*50/]);
 });
 
 test('wave 3 ends with the kraken: the others swim off and it takes 3 spells', async ({ page }) => {
