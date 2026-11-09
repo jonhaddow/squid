@@ -20,7 +20,7 @@
 		savePlayer,
 		type Look
 	} from '#lib/game/progress.ts';
-	import { syncScores, type Row } from '#lib/scores.ts';
+	import { syncScores, type Boards } from '#lib/scores.ts';
 
 	/** The device's one squid. Fresh until the save loads, and not shown till then. */
 	let player = $state(newPlayer());
@@ -30,7 +30,10 @@
 	/** In the dressing room, choosing a colour and things to wear. */
 	let dressing = $state(false);
 	/** The family leaderboard, once it's loaded (it stays empty offline). */
-	let board = $state<Row[]>([]);
+	let boards = $state<Boards>({ best: [], total: [] });
+	/** Which board shows: best game or all games. */
+	let view = $state<keyof Boards>('best');
+	const board = $derived(boards[view]);
 	let width = $state(800);
 	let height = $state(400);
 	/** The big squid in the dressing room. */
@@ -105,7 +108,7 @@
 		if (!home || !loaded) return;
 		let live = true;
 		void syncScores(untrack(() => $state.snapshot(player))).then((rows) => {
-			if (live && rows) board = rows;
+			if (live && rows) boards = rows;
 		});
 		return () => (live = false);
 	});
@@ -353,18 +356,55 @@
 						</button>
 						{#if player.name}<p class="label">{player.name}</p>{/if}
 					</div>
-					{#if board.length}
-						<!-- The family leaderboard: best hard-mode game, a row per device. -->
-						<ol class="board" aria-label="High scores" style:--s="{squidlet}px">
-							{#each board as row, i (i)}
-								<li class:me={row.me} {@attach row.me ? showMe : undefined}>
-									<span class="place place-{i + 1}">{PLACES[i] ?? i + 1}</span>
-									<SquidPreview look={row} size={squidlet} />
-									<span class="who">{row.name || '?'}</span>
-									<span class="score">{row.best}</span>
-								</li>
-							{/each}
-						</ol>
+					{#if boards.best.length || boards.total.length}
+						<!-- The family leaderboards, a row per device: best hard-mode game, or friends in all games. -->
+						<div class="boards">
+							<div class="views">
+								<button
+									class="block"
+									class:on={view === 'best'}
+									aria-pressed={view === 'best'}
+									aria-label="Best game"
+									onclick={() => (view = 'best')}
+								>
+									<!-- A trophy, as on the Challenge button. -->
+									<svg viewBox="0 0 24 24" aria-hidden="true"
+										><path
+											d="M7 3h10v2h3.5v2.5a4 4 0 0 1-4.2 4A5.5 5.5 0 0 1 13 14v3h3v3H8v-3h3v-3a5.5 5.5 0 0 1-3.3-2.5 4 4 0 0 1-4.2-4V5H7zM5.5 7v.5a2 2 0 0 0 1.6 2A6 6 0 0 1 7 7zm13 0H17a6 6 0 0 1-.1 2.5 2 2 0 0 0 1.6-2z"
+											fill="currentColor"
+										/></svg
+									>
+								</button>
+								<button
+									class="block"
+									class:on={view === 'total'}
+									aria-pressed={view === 'total'}
+									aria-label="All games"
+									onclick={() => (view = 'total')}
+								>
+									<!-- A pile of stars: every game added up. -->
+									<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"
+										><path
+											d="M6 11l1.6 3.4 3.7.4-2.8 2.5.8 3.7L6 19.1 2.7 21l.8-3.7L.7 14.8l3.7-.4z"
+										/><path
+											d="M18 11l1.6 3.4 3.7.4-2.8 2.5.8 3.7L18 19.1 14.7 21l.8-3.7-2.8-2.5 3.7-.4z"
+										/><path
+											d="M12 1l1.6 3.4 3.7.4-2.8 2.5.8 3.7L12 9.1 8.7 11l.8-3.7L6.7 4.8l3.7-.4z"
+										/></svg
+									>
+								</button>
+							</div>
+							<ol class="board" aria-label="High scores" style:--s="{squidlet}px">
+								{#each board as row, i (i)}
+									<li class:me={row.me} {@attach row.me ? showMe : undefined}>
+										<span class="place place-{i + 1}">{PLACES[i] ?? i + 1}</span>
+										<SquidPreview look={row} size={squidlet} />
+										<span class="who">{row.name || '?'}</span>
+										<span class="score">{row[view]}</span>
+									</li>
+								{/each}
+							</ol>
+						</div>
 					{/if}
 				</div>
 			{/if}
@@ -581,6 +621,27 @@
 		text-shadow: 0 4px 0 var(--violet);
 	}
 
+	.boards {
+		display: grid;
+		gap: 10px;
+	}
+	.views {
+		display: flex;
+		justify-content: center;
+		gap: 10px;
+	}
+	.views .block {
+		width: clamp(56px, 16vh, 84px);
+		height: clamp(40px, 11vh, 56px);
+		opacity: 0.55;
+	}
+	.views .block svg {
+		width: auto;
+		height: 75%;
+	}
+	.views .on {
+		opacity: 1;
+	}
 	.board {
 		margin: 0;
 		padding: 10px 14px;

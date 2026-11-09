@@ -31,6 +31,14 @@ describe('player', () => {
 		expect(loadPlayer(store)).toMatchObject({ level: 3, best: 0, name: '', won: [] });
 	});
 
+	it('guesses a total for saves from before it, from the best game and easy waves', () => {
+		const store = memory();
+		store.setItem('squid-spells-v1', JSON.stringify([{ level: 3, best: 7 }]));
+		expect(loadPlayer(store).total).toBe(27);
+		store.setItem('squid-spells-v1', JSON.stringify([{ level: 3, best: 7, total: 5 }]));
+		expect(loadPlayer(store).total).toBe(5);
+	});
+
 	it('keeps the first squid of an old two-squid save', () => {
 		const store = memory();
 		store.setItem('squid-spells-v1', JSON.stringify([{ best: 4 }, { best: 7 }]));

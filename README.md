@@ -10,7 +10,7 @@ Both modes (Chill and Challenge on screen, easy and hard below) are endless: eve
 
 - Install: open it in Safari (or Chrome), then Share → Add to Home Screen. The glowing phone button on the start screen shows the steps (or installs it straight away in Chrome on Android).
 - Landscape only (a rotate prompt shows in portrait), installable as a PWA, and it plays offline.
-- No sign-in. Progress is in localStorage; only the squid's name, colour and best hard-mode game go to the server, for the family leaderboard on the start screen.
+- No sign-in. Progress is in localStorage; only the squid's name, colour, best hard-mode game and total friends (all games) go to the server, for the family leaderboards on the start screen (a toggle switches between them).
 - Built for small kids: almost no words, a finger shows each new shape, no losing, and it slows down when they miss.
 
 ```
