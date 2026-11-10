@@ -15,6 +15,7 @@ A canvas drawing game for Jon's kids (6 and 8): draw a shape to cast a spell and
 - The start screen's corner button (`InstallHint.svelte`, platform from `src/lib/install.ts`) shows how to add the game to the home screen; hidden once installed and on computers. Chromium emulation reports 1 touch point, so iPad tests fake `maxTouchPoints`.
 - `shot` is portrait-only, which shows the rotate prompt: use `node scripts/shot.ts` instead.
 - The e2e tests read `window.__squid.state`.
+- `node scripts/icons.ts` redraws the app icons from the squid sprite.
 
 ## Review focus
 
