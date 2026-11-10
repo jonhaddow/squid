@@ -2,7 +2,7 @@
 
 A drawing game for younger kids. You're a squid wizard under the sea: sea creatures swim at you, each showing a shape, and drawing that shape casts a spell that turns them into friends. Friends unlock hats and outfits for your squid.
 
-It's designed for small children: almost no reading, nothing scary, a gentle mode with no losing, and it plays offline once installed. How it plays: [`docs/game.md`](docs/game.md).
+It's designed for small children: almost no reading, nothing scary, a gentle mode with no losing, and it plays offline once installed.
 
 ## Tech stack
 
@@ -12,6 +12,11 @@ It's designed for small children: almost no reading, nothing scary, a gentle mod
 - [Vitest](https://vitest.dev) and [Playwright](https://playwright.dev) for tests
 - Deployed from `main` by Cloudflare Workers Builds
 
-## Development
+## Running locally
 
-See [`docs/development.md`](docs/development.md).
+```sh
+npm ci
+npm run dev
+```
+
+Tests: `npm test` (unit), `npm run test:e2e` (plays the game in Chromium), `npm run check` (types), `npm run lint`.
