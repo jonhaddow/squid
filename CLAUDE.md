@@ -1,6 +1,6 @@
 # Squid Spells
 
-A canvas drawing game for Jon's kids (6 and 8): draw a shape to cast a spell and befriend sea creatures. See README.md.
+A canvas drawing game for younger kids: draw a shape to cast a spell and befriend sea creatures. See README.md.
 
 ## Worth knowing
 
@@ -19,4 +19,4 @@ A canvas drawing game for Jon's kids (6 and 8): draw a shape to cast a spell and
 
 ## Review focus
 
-Recognition being forgiving enough for a 6 year old, frame-rate on old tablets (no allocations in hot loops), touch on iOS Safari.
+Recognition being forgiving enough for a young child, frame-rate on old tablets (no allocations in hot loops), touch on iOS Safari.
