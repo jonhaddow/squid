@@ -1,7 +1,7 @@
 // Tells which spell shape a finger drew: a circle (shield), a zigzag (zap), a
 // swirl (bubbles), a triangle (fins) or a half circle, an arch (a rainbow, for
 // the sea turtle).
-// Forgiving on purpose: a 6 year old's wobbly circle counts.
+// Forgiving on purpose: a young child's wobbly circle counts.
 // It works on how much the line turns overall, so size, speed, direction and
 // where on the screen it was drawn don't matter.
 
