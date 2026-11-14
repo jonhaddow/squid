@@ -16,3 +16,9 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # TypeScript 7.0 fails npm ci: svelte-check and typescript-eslint only
+      # accept TypeScript up to 6. Skip 7.0.x only, so 7.1 still gets a PR.
+      - dependency-name: typescript
+        versions:
+          - '7.0.x'
