@@ -24,7 +24,7 @@
 		"@eslint/js": "^10.0.1",
 		"@playwright/test": "^1.64.0",
 		"@sveltejs/adapter-cloudflare": "^8.0.0",
-		"@sveltejs/kit": "^3.0.1",
+		"@sveltejs/kit": "^3.2.0",
 		"@sveltejs/vite-plugin-svelte": "^7.2.0",
 		"@types/node": "^26",
 		"eslint": "^10.4.1",
@@ -37,9 +37,9 @@
 		"svelte-check": "^4.6.0",
 		"typescript": "^6.0.3",
 		"typescript-eslint": "^8.72.2",
-		"vite": "^8.3.7",
+		"vite": "^8.3.8",
 		"vitest": "^5.0.3",
-		"wrangler": "^4.159.0"
+		"wrangler": "^4.160.0"
 	},
 	"imports": {
 		"#lib/*": "./src/lib/*"
