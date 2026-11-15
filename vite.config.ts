@@ -16,6 +16,8 @@ export default defineConfig({
 			csp: {
 				directives: {
 					'default-src': ['self'],
+					// The games launcher's shared board (games.app.haddow.me).
+					'connect-src': ['self', 'https://games.app.haddow.me'],
 					'script-src': ['self'],
 					'style-src': ['self', 'unsafe-inline'],
 					'font-src': ['self'],

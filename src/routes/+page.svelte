@@ -21,6 +21,7 @@
 		type Look
 	} from '#lib/game/progress.ts';
 	import { syncScores, type Boards } from '#lib/scores.ts';
+	import { boardUrl, pickNameUrl, report, type Standing } from '#lib/board.ts';
 
 	/** The device's one squid. Fresh until the save loads, and not shown till then. */
 	let player = $state(newPlayer());
@@ -33,6 +34,8 @@
 	let boards = $state<Boards>({ best: [], total: [] });
 	/** Which board shows: best game or all games. */
 	let view = $state<keyof Boards>('best');
+	/** Who's playing on the games launcher's shared board (null if it can't be reached). */
+	let standing = $state<Standing | null>(null);
 	const board = $derived(boards[view]);
 	/** A trophy, on the Challenge button and the best-game board's button. */
 	const TROPHY =
@@ -118,6 +121,10 @@
 		// After the save loads, so it posts this squid's best, not a fresh one's.
 		if (!home || !loaded) return;
 		let live = true;
+		const best = untrack(() => player.best);
+		void report(best).then((s) => {
+			if (live) standing = s;
+		});
 		void syncScores(untrack(() => $state.snapshot(player))).then((rows) => {
 			if (!live || !rows) return;
 			boards = rows;
@@ -397,6 +404,15 @@
 							</ol>
 						</div>
 					{/if}
+					{#if standing}
+						<p class="games">
+							{#if standing.player}
+								<a href={boardUrl}>All games: {standing.player.name}</a>
+							{:else}
+								<a href={pickNameUrl()}>All games: pick a name</a>
+							{/if}
+						</p>
+					{/if}
 				</div>
 			{/if}
 			<InstallHint />
@@ -612,6 +628,16 @@
 		text-shadow: 0 4px 0 var(--violet);
 	}
 
+	/* A link to the games launcher's shared board, for grown-ups. */
+	.games {
+		margin: 10px 0 0;
+		text-align: center;
+		font-size: 14px;
+	}
+	.games a {
+		color: inherit;
+		opacity: 0.8;
+	}
 	.boards {
 		display: grid;
 		gap: 10px;

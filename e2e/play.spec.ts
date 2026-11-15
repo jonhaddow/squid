@@ -213,3 +213,21 @@ test('the dressing room changes the colour and outfit, and remembers them', asyn
 		neck: 'bowtie'
 	});
 });
+
+test('links to the games launcher’s shared board, as the player it was handed', async ({
+	page
+}) => {
+	const ids: (string | undefined)[] = [];
+	await page.route('https://games.app.haddow.me/api/scores/squid', async (route) => {
+		ids.push(route.request().headers()['x-games-profile']);
+		await route.fulfill({
+			json: { player: { name: 'Alex', colour: '#3a86ff' }, me: null, rows: [] }
+		});
+	});
+	await page.goto('/#profile=p-alex');
+	await expect(page.getByRole('link', { name: 'All games: Alex' })).toHaveAttribute(
+		'href',
+		'https://games.app.haddow.me/boards/squid'
+	);
+	expect(ids[0]).toBe('p-alex');
+});
