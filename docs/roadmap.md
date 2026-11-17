@@ -1,0 +1,7 @@
+# Roadmap
+
+Ideas for after the kids have played v1:
+
+- Scan the kids' drawings of bosses into the game.
+- More spells (a heart for healing; a star was tried and was too tricky to draw).
+- Sync saves between devices (would need D1).
