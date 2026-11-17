@@ -1,13 +1,16 @@
-# Squid Spells (moved)
+# Squid Spells
 
-A drawing game for younger kids, now part of the family games app at [games.app.haddow.me/squid](https://games.app.haddow.me/squid).
+A drawing game for younger kids. You're a squid wizard under the sea: sea creatures swim at you, each showing a shape, and drawing that shape casts a spell that turns them into friends. Friends unlock hats and outfits for your squid.
 
-This site just sends devices there, bringing their saved progress along.
+It's designed for small children: almost no reading, nothing scary, a gentle mode with no losing, and it plays offline once installed.
 
 ## Tech stack
 
-- [SvelteKit](https://svelte.dev) and TypeScript: one prerendered page and a service worker
-- [Cloudflare Workers](https://workers.cloudflare.com), deployed from `main` by Workers Builds
+- [SvelteKit](https://svelte.dev) (Svelte 5) and TypeScript, as an offline-first PWA with a service worker
+- HTML canvas for all the graphics, and the Web Audio API for sound (no image or sound files)
+- [Cloudflare Workers](https://workers.cloudflare.com), with [D1](https://developers.cloudflare.com/d1/) for the leaderboard
+- [Vitest](https://vitest.dev) and [Playwright](https://playwright.dev) for tests
+- Deployed from `main` by Cloudflare Workers Builds
 
 ## Running locally
 
@@ -16,4 +19,4 @@ npm ci
 npm run dev
 ```
 
-Tests: `npm test` (unit), `npm run test:e2e` (Playwright), `npm run check` (types), `npm run lint`.
+Tests: `npm test` (unit), `npm run test:e2e` (plays the game in Chromium), `npm run check` (types), `npm run lint`.
