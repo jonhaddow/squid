@@ -225,13 +225,13 @@
 <svelte:window bind:innerWidth={width} bind:innerHeight={height} />
 
 {#snippet none()}
-	<svg viewBox="0 0 24 24" aria-hidden="true"
-		><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" /><path
+	<svg viewBox="0 0 24 24" aria-hidden="true">
+		<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3" /><path
 			d="M6.5 17.5l11-11"
 			stroke="currentColor"
 			stroke-width="3"
-		/></svg
-	>
+		/>
+	</svg>
 {/snippet}
 
 <main>
@@ -278,8 +278,10 @@
 							class:on={!player[rail.kind]}
 							aria-label={rail.none}
 							aria-pressed={!player[rail.kind]}
-							onclick={() => wear({ [rail.kind]: null })}>{@render none()}</button
+							onclick={() => wear({ [rail.kind]: null })}
 						>
+							{@render none()}
+						</button>
 						{#each rail.items as item (item)}
 							<!-- Prizes are won, one a wave: the rest show as shadows to play for. -->
 							{@const locked = isLocked(player, item)}
@@ -299,9 +301,9 @@
 				{/each}
 			</div>
 			<button class="back" onclick={() => (dressing = false)} aria-label="Done">
-				<svg viewBox="0 0 24 24" aria-hidden="true"
-					><path d="M15 4l-8 8 8 8" fill="none" stroke="currentColor" stroke-width="3" /></svg
-				>
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M15 4l-8 8 8 8" fill="none" stroke="currentColor" stroke-width="3" />
+				</svg>
 			</button>
 		</section>
 	{:else if !playing && chosen}
@@ -334,9 +336,9 @@
 				</button>
 			</div>
 			<button class="back" onclick={() => (chosen = false)} aria-label="Back">
-				<svg viewBox="0 0 24 24" aria-hidden="true"
-					><path d="M15 4l-8 8 8 8" fill="none" stroke="currentColor" stroke-width="3" /></svg
-				>
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M15 4l-8 8 8 8" fill="none" stroke="currentColor" stroke-width="3" />
+				</svg>
 			</button>
 		</section>
 	{:else if !playing}
@@ -348,22 +350,20 @@
 						<button class="pick" onclick={pick} aria-label="Play" style:--squid={player.color}>
 							<SquidPreview look={player} />
 							<span class="best" aria-label="High score {player.best}">
-								<svg viewBox="0 0 24 24" aria-hidden="true"
-									><path
-										d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"
-									/></svg
-								>
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									<path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z" />
+								</svg>
 								{player.best}
 							</span>
 						</button>
 						<button class="block wardrobe" onclick={dress} aria-label="Dress up">
 							<!-- A T-shirt. -->
-							<svg viewBox="0 0 24 24" aria-hidden="true"
-								><path
+							<svg viewBox="0 0 24 24" aria-hidden="true">
+								<path
 									d="M8.5 3L2 6.5l2.5 5 2.5-1.2V21h10V10.3l2.5 1.2 2.5-5L15.5 3a3.5 3.5 0 0 1-7 0z"
 									fill="currentColor"
-								/></svg
-							>
+								/>
+							</svg>
 						</button>
 						{#if player.name}<p class="label">{player.name}</p>{/if}
 					</div>
@@ -406,18 +406,18 @@
 			<canvas class="game" {@attach run()}></canvas>
 		{/key}
 		<button class="block corner" onclick={quit} aria-label="Home">
-			<svg viewBox="0 0 24 24" aria-hidden="true"
-				><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z" fill="currentColor" /></svg
-			>
+			<svg viewBox="0 0 24 24" aria-hidden="true">
+				<path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z" fill="currentColor" />
+			</svg>
 		</button>
 		{#if ended}
 			<div class="done">
 				<p class="cheer">Oh no!</p>
 				<div class="row">
 					<button class="block big" onclick={quit} aria-label="Home">
-						<svg viewBox="0 0 24 24" aria-hidden="true"
-							><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z" fill="currentColor" /></svg
-						>
+						<svg viewBox="0 0 24 24" aria-hidden="true">
+							<path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z" fill="currentColor" />
+						</svg>
 					</button>
 					<button class="block big go" onclick={again} aria-label="Try again">
 						<svg viewBox="0 0 24 24" aria-hidden="true">

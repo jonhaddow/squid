@@ -3,11 +3,9 @@
 	"name": "squid",
 	"compatibility_date": "2026-10-03",
 	"compatibility_flags": ["nodejs_als"],
-	"main": ".svelte-kit/cloudflare/_worker.js",
 	// Every page is prerendered: the Worker serves these files, and runs only for /api/scores.
 	"assets": {
-		"binding": "ASSETS",
-		"directory": ".svelte-kit/cloudflare"
+		"binding": "ASSETS"
 	},
 	"workers_dev": false,
 	"routes": [{ "pattern": "squid.app.haddow.me", "custom_domain": true }],

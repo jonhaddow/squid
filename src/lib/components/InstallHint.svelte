@@ -148,9 +148,9 @@
 				{/each}
 			</ol>
 			<button class="block ok" aria-label="Close" onclick={() => (open = false)}>
-				<svg viewBox="0 0 24 24" aria-hidden="true"
-					><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="3.5" /></svg
-				>
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="3.5" />
+				</svg>
 			</button>
 		</div>
 	</div>
